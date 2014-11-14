@@ -1,0 +1,21 @@
+{
+	"project": 
+	{
+		"name": "Hierarchical Finite State Machine",
+		"description": "A simple and hierarchical finite state machine",
+		"version": "0.1.0",
+		"id": "hfsm",
+		"devDependencies": 
+		{
+			"hamcrest": "1.x",
+			"munit": "2.x"
+		},
+		"dependencies": 
+		{
+		}
+	},
+	"haxelib": 
+	{
+		"user": "haysclark"
+	}
+}

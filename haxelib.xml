@@ -1,0 +1,7 @@
+<project name="hfsm" url="https://github.com/haysclark/haxe-hierarchical-state-machine" license="MIT">
+    <user name="haysclark"/>
+    <tag v="cross"/>
+    <tag v="example"/>
+    <description>A simple and hierarchical finite state machine</description>
+    <version name="0.1.0">Initial release</version>
+</project>
