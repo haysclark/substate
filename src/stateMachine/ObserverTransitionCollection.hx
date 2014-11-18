@@ -11,22 +11,24 @@ class ObserverTransitionCollection implements IObserverTransition
 	//----------------------------------
 	//  vars
 	//----------------------------------
-	private var _observerTransitions:Array<Dynamic>;// of IObserverTransitions
-	
+	private var _observerTransitions:Array<IObserverTransition>;
+
+    public function new():Void {}
+
 	//--------------------------------------------------------------------------
 	//
 	//  PUBLIC METHODS
 	//
 	//--------------------------------------------------------------------------
 	public function init():Void {
-		_observerTransitions=[];
+		_observerTransitions = new Array<IObserverTransition>();
 	}
 	
 	public function destroy():Void {
-		while(_observerTransitions.length){
-			unsubscribe(_observerTransitions.pop()as IObserverTransition);
+		while(_observerTransitions.length > 0){
+			unsubscribe(_observerTransitions.pop());
 		}
-		_observerTransitions=null;
+		_observerTransitions = null;
 	}
 	
 	public function subscribe(observer:IObserverTransition):Void {
@@ -34,31 +36,30 @@ class ObserverTransitionCollection implements IObserverTransition
 	}
 	
 	public function unsubscribe(observer:IObserverTransition):Void {
-		var n:Int=_observerTransitions.length;
-		for(i in 0...n){
-			if(observer !==_observerTransitions[i]){
-				continue;
-			}
-			_observerTransitions.splice(i, 1);
-		}
+        _observerTransitions.remove(observer);
+        // _observerTransitions.indexOf(observer)
+		//for (i in 0 ... _observerTransitions.length) {
+		//	if (observer != _observerTransitions[i]) {
+	//			continue;
+	//		}
+	//		_observerTransitions.splice(i, 1);
+	//	}
 	}
 	
 	//----------------------------------
 	//  IObserverTransition
 	//----------------------------------
 	public function transitionComplete(toState:String, fromState:String):Void {
-		var n:Int=_observerTransitions.length;
-		for(i in 0...n){
-			var observer:IObserverTransition=_observerTransitions[i] as IObserverTransition;
-			observer..transitionComplete(toState, fromState)
+		for (i in 0 ... _observerTransitions.length) {
+			var observer:IObserverTransition = _observerTransitions[i];
+            observer.transitionComplete(toState, fromState);
 		}
-	}
-	
-	public function transitionDenied(toState:String, fromState:String, allowedFromStates:Array):Void {
-		var n:Int=_observerTransitions.length;
-		for(i in 0...n){
-			var observer:IObserverTransition=_observerTransitions[i] as IObserverTransition;
-			observer.transitionDenied(toState, fromState, allowedFromStates)
+    }
+
+    public function transitionDenied(toState:String, fromState:String, allowedFromStates:Array<String>):Void {
+		for (i in 0 ... _observerTransitions.length) {
+			var observer:IObserverTransition = _observerTransitions[i];
+			observer.transitionDenied(toState, fromState, allowedFromStates);
 		}
 	}
 }

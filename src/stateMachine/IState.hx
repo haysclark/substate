@@ -3,15 +3,19 @@ package stateMachine;
 interface IState
 {
 	/** the ID of the State **/
-	function get name():String;
+    var name(default, null):String;
+
 	/** the parent States ID(optional)**/
-	function get parentName():String;
-	/** the States which can transition to this State
+    var parentName(default, null):String;
+
+    /** enter state Handler(optional)**/
+    var onEnter(default, null):IEnter;
+
+    /** exit state Handler(optional)**/
+    var onExit(default, null):IExit;
+
+    /** the States which can transition to this State
 	 * will default to *(WILDCARD)is not set
 	 **/
-	function get from():Array<Dynamic>;
-	/** enter state Handler(optional)**/
-	function get onEnter():IEnter;
-	/** exit state Handler(optional)**/
-	function get onExit():IExit;
+    var froms(default, null):Array<String>;
 }

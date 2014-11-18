@@ -1,49 +1,55 @@
 package stateMachine;
 
-import flash.utils.Dictionary;
+import haxe.ds.StringMap;
 
-class StateMachine implements IStateMachine
-{
+class StateMachine implements IStateMachine {
 	//----------------------------------
 	//  CONSTS
 	//----------------------------------
-	public static inline var UNINITIALIZED_STATE:String="uninitializedState";
+	public static inline var UNINITIALIZED_STATE:String = "uninitializedState";
 	
 	// NOOPs
-	public static inline var UNKNOWN_STATE:IState=new State("unknown.state");
-	public static inline var UNKNOWN_PARENT_STATE:IState=new State("unknown.parent.state");
-	public static inline var NO_PARENT_STATE:IState=new State("no.parent.state");
-	
-	//----------------------------------
+	public static var UNKNOWN_STATE:IState = new State("unknown.state");
+	public static var UNKNOWN_PARENT_STATE:IState = new State("unknown.parent.state");
+	public static var NO_PARENT_STATE:IState = new State("no.parent.state");
+
+    //----------------------------------
 	//  vars
 	//----------------------------------
 	/* @private */
-	private var _nameToStates:Dictionary;
+	private var _nameToStates:StringMap<IState>;
+
 	/* @private */
 	private var _observerCollection:ObserverTransitionCollection;
-	/* @private */
-	private var _state:String=UNINITIALIZED_STATE;
-	
+
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
+    public function new() {}
+
 	//--------------------------------------------------------------------------
 	//
 	//  PUBLIC METHODS
 	//
 	//--------------------------------------------------------------------------
 	public function init():Void {
-		_nameToStates=new Dictionary();
-		_observerCollection=new ObserverTransitionCollection();
-		_observerCollection.init();
+        state = UNINITIALIZED_STATE;
+
+        _nameToStates = new StringMap<IState>();
+	 	_observerCollection = new ObserverTransitionCollection();
+	 	_observerCollection.init();
 	}
-	
+
 	public function destroy():Void {
-		for(key in _nameToStates){
-			_nameToStates[key]=null;
-			delete _nameToStates[key];
-		}
-		_nameToStates=null;
+        for (key in _nameToStates.keys()) {
+            _nameToStates.remove(key);
+        }
+        _nameToStates = null;
+
 		_observerCollection.destroy();
 		_observerCollection=null;
-		_state=null;
 	}
 	
 	public function subscribe(observer:IObserverTransition):Void {
@@ -63,44 +69,42 @@ class StateMachine implements IStateMachine
 	 * @param stateData	A hash containing state enter and exit callbacks and allowed states to transition from
 	 * The "from" property can be a string or and array with the state names or * to allow any transition
 	 **/
-	public function addState(newState:IState):Void {
-		//if(newState.name in _nameToStates){
-		//trace("[StateMachine] Overriding existing state " + newState.name);
-		//}
-		_nameToStates[newState.name]=newState;
-	}
+    public function addState(newState:IState):Void {
+        if (_nameToStates.exists(newState.name)) {
+           //trace("[StateMachine] Overriding existing state " + newState.name);
+        }
+        _nameToStates.set(newState.name, newState);
+    }
 	
 	/**
 	 * Sets the first state, calls enter callback and dispatches TRANSITION_COMPLETE
 	 * These will only occour if no state is defined
 	 * @param stateName	The name of the State
 	 **/
-	public var initialState(null, set_initialState):String;
- 	private function set_initialState(stateName:String):Void {
-		if(_state==UNINITIALIZED_STATE && stateName in _nameToStates){
-			_state=stateName;
-			executeEnterForStack(stateName, null);
-			notifyTransitionComplete(stateName, null);		
-		}
-	}
-	
+    public var initialState(null, set):String;
+    private function set_initialState(stateName:String):String {
+        if(state == UNINITIALIZED_STATE && _nameToStates.exists(stateName)) {
+            state = stateName;
+            executeEnterForStack(stateName, null);
+            notifyTransitionComplete(stateName, null);
+        }
+        return initialState;
+    }
+
 	/**
 	 * Getters for the current state and for the Dictionary of states
 	 */
-	public var state(get_state, set_state):String;
- 	private function get_state():String {
-		return _state;
-	}
-	
-	/**
+    public var state(default, null):String;
+
+    /**
 	 * Verifies if a state name is known by StateMachine.
 	 * 
 	 * @param stateName	The name of the State
 	 **/
-	public function hasStateByName(name:String):Bool {
-		return(_nameToStates[name] !=undefined);
-	}
-	
+    public function hasStateByName(name:String):Bool {
+        return _nameToStates.exists(name);
+    }
+
 	/**
 	 * Verifies if a transition can be made from the current state to the
 	 * state passed as param
@@ -109,8 +113,8 @@ class StateMachine implements IStateMachine
 	 **/
 	public function canChangeStateTo(toState:String):Bool {
 		return(hasStateByName(toState)
-			&& toState !=_state
-			&& allowTransitionFrom(_state, toState)
+			&& toState != state
+			&& allowTransitionFrom(state, toState)
 		);
 	}
 	
@@ -121,41 +125,42 @@ class StateMachine implements IStateMachine
 	 * @param stateTo	The name of the state to transition to
 	 **/
 	public function changeState(stateTo:String):Void {
-		// If there is no state that maches stateTo
-		if(!hasStateByName(stateTo)){
+		// If there is no state that matches stateTo
+		if (!hasStateByName(stateTo)) {
 			//trace("[StateMachine] Cannot make transition:State " + stateTo + " is not defined");
 			return;
 		}
 		
 		// If current state is not allowed to make this transition
-		if(!canChangeStateTo(stateTo)){
+		if (!canChangeStateTo(stateTo)) {
 			//trace("[StateMachine] Transition to " + stateTo + " from " + state + " denied");
-			notifyTransitionDenied(_state, stateTo, getAllFromsForStateByName(stateTo));
+			notifyTransitionDenied(state, stateTo, getAllFromsForStateByName(stateTo));
 			return;
 		}
 		
 		// call exit and enter callbacks(if they exits)
-		var path:Array<Dynamic>=findPath(_state, stateTo);
-		if(path[0]>0){ // hasFroms
-			executeExitForStack(_state, stateTo, path[0]);
+		var path:Array<Int> = findPath(state, stateTo);
+		if (path[0] > 0) { // hasFroms
+			executeExitForStack(state, stateTo, path[0]);
 		}
 		
-		var oldState:String=_state;
-		_state=stateTo;
-		if(path[1]>0){ // hasTos
+		var oldState:String = state;
+		state = stateTo;
+		if (path[1] > 0) { // hasTos
 			executeEnterForStack(stateTo, oldState);
 		}
-		//trace("[StateMachine] State Changed to " + _state);			
+
+		//trace("[StateMachine] State Changed to " + state);
 		notifyTransitionComplete(stateTo, oldState);
 	}
 	
-	private function executeExitForStack(_state:String, stateTo:String, n:Int):Void {
-		getStateByName(_state).onExit.exit(_state, stateTo, _state);
-		var parentState:IState=getStateByName(_state);
-		for(var i:Int=0;i<n - 1;i++){
-			parentState=getParentStateByName(parentState.name);// parentState.parent;
-			if(parentState.onExit !=null){
-				parentState.onExit.exit(_state, stateTo, parentState.name);
+	private function executeExitForStack(state:String, stateTo:String, n:Int):Void {
+		getStateByName(state).onExit.exit(state, stateTo, state);
+		var parentState:IState = getStateByName(state);
+        for (i in 0 ... n - 1) {
+			parentState = getParentStateByName(parentState.name); // parentState.parent;
+			if (parentState.onExit != null) { // needed? these should always be NOOPS
+				parentState.onExit.exit(state, stateTo, parentState.name);
 			}
 		}
 	}
@@ -166,9 +171,9 @@ class StateMachine implements IStateMachine
 	//
 	//--------------------------------------------------------------------------
 	private function allowTransitionFrom(fromState:String, toState:String):Bool {
-		var fromStateAllNames:Array<Dynamic>=getAllStateNames(fromState);
-		var toStateFroms:Array<Dynamic>=getAllFromsForStateByName(toState);
-		return(toStateFroms.indexOf(State.WILDCARD)>=0 
+        var fromStateAllNames:Array<String> = getAllStateNames(fromState);
+        var toStateFroms:Array<String> = getAllFromsForStateByName(toState);
+        return (toStateFroms.indexOf(State.WILDCARD) >= 0
 			|| doTransitionsMatch(fromStateAllNames, toStateFroms));
 	}
 	
@@ -178,34 +183,35 @@ class StateMachine implements IStateMachine
 	 * @param stateFrom The state to exit
 	 * @param stateTo The state to enter
 	 **/
-	private function findPath(stateFrom:String, stateTo:String):Array {
+	public function findPath(stateFrom:String, stateTo:String):Array<Int> {
 		// Verifies if the states are in the same "branch" or have a common parent
-		var froms:Int=0;
-		var tos:Int=0;
-		if(hasStateByName(stateFrom)&& hasStateByName(stateTo)){
-			var fromState:IState=getStateByName(stateFrom);
-			while(fromState && fromState !=UNKNOWN_STATE && fromState !=UNKNOWN_PARENT_STATE){
-				tos=0;
-				var toState:IState=getStateByName(stateTo);
-				while(toState && toState !=UNKNOWN_STATE && toState !=UNKNOWN_PARENT_STATE){
-					if(fromState==toState){
+		var froms:Int = 0;
+		var tos:Int = 0;
+		if (hasStateByName(stateFrom) && hasStateByName(stateTo)) {
+			var fromState:IState = getStateByName(stateFrom);
+			while ((fromState != null) && (fromState != UNKNOWN_STATE) && (fromState != UNKNOWN_PARENT_STATE)) {
+				tos = 0;
+				var toState:IState = getStateByName(stateTo);
+				while ((toState != null) && (toState != UNKNOWN_STATE) && (toState != UNKNOWN_PARENT_STATE)) {
+					if (fromState==toState) {
 						// They are in the same brach or have
 						// a common parent Common parent
 						return [froms, tos];
 					}
 					tos++;
-					toState=getParentStateByName(toState.name);//toState.parent;
+					toState = getParentStateByName(toState.name); //toState.parent;
 				}
 				froms++;
-				fromState=getParentStateByName(fromState.name)//fromState.parent;
+				fromState = getParentStateByName(fromState.name); //fromState.parent;
 			}
 		}
 		
 		// No direct path, no commom parent:exit until root then enter until element
-		return [froms, tos];
+        var output:Array<Int> = [froms, tos];
+        return output;
 	}
 	
-	private function getParentStateByName(name:String):IState {
+	public function getParentStateByName(name:String):IState {
 		if(!hasStateByName(name)){
 			return UNKNOWN_STATE;
 		} else {
@@ -216,13 +222,13 @@ class StateMachine implements IStateMachine
 			} else if(!hasStateByName(parentName)){
 				return UNKNOWN_PARENT_STATE;
 			} else {
-				return getStateByName(parentName);					
+				return getStateByName(parentName);
 			}
 		}
 	}
 	
 	private function getStateByName(name:String):IState {
-		return hasStateByName(name)? _nameToStates[name]:UNKNOWN_STATE;
+		return hasStateByName(name) ? _nameToStates.get(name) : UNKNOWN_STATE;
 	}
 	
 	//--------------------------------------------------------------------------
@@ -231,38 +237,38 @@ class StateMachine implements IStateMachine
 	//
 	//--------------------------------------------------------------------------
 	private function executeEnterForStack(stateTo:String, oldState:String):Void {
-		var parentStates:Array<Dynamic>=getAllStatesChildToRootByName(stateTo);
-		var n:Int=parentStates.length;
-		for(var j:Int=n - 1;j>=0;j--){
-			var state:IState=parentStates[j];
-			state.onEnter.enter(stateTo, oldState, state.name);
-		}
+		var parentStates:Array<IState> = getAllStatesChildToRootByName(stateTo);
+        parentStates.reverse;
+        for(i in 0...parentStates.length) {
+            var state:IState = parentStates[i];
+            state.onEnter.enter(stateTo, oldState, state.name);
+        }
 	}
 	
 	private function notifyTransitionComplete(toState:String, fromState:String):Void {
-		_observerCollection.transitionComplete(toState, fromState);
+ 	    _observerCollection.transitionComplete(toState, fromState);
 	}
 	
-	private function notifyTransitionDenied(fromState:String, toState:String, allowedFromStates:Array):Void {
+	private function notifyTransitionDenied(fromState:String, toState:String, allowedFromStates:Array<String>):Void {
 		_observerCollection.transitionDenied(toState, fromState, allowedFromStates);
 	}
 	
-	private function getAllStatesChildToRootByName(name:String):Array {
-		var states:Array<Dynamic>=[];
-		while(hasStateByName(name)){
-			var state:IState=getStateByName(name);
+	private function getAllStatesChildToRootByName(name:String):Array<IState> {
+		var states:Array<IState> = new Array<IState>();
+		while (hasStateByName(name)) {
+			var state:IState = getStateByName(name);
 			states.push(state);
-			if(state.parentName==State.NO_PARENT){
+			if (state.parentName == State.NO_PARENT) {
 				break;
 			}
-			name=state.parentName;
+			name = state.parentName;
 		}
 		return states;
 	}
 	
-	private function doTransitionsMatch(fromStateAllNames:Array, toStateFroms:Array):Bool {
-		for(var name:String in fromStateAllNames){
-			if(toStateFroms.indexOf(name)<0){
+	private function doTransitionsMatch(fromStateAllNames:Array<String>, toStateFroms:Array<String>):Bool {
+		for (name in fromStateAllNames) {
+			if (toStateFroms.indexOf(name) < 0) {
 				continue;
 			}
 			return true;
@@ -270,21 +276,21 @@ class StateMachine implements IStateMachine
 		return false;
 	}
 	
-	private function getAllStateNames(stateName:String):Array {
-		var names:Array<Dynamic>=[];
-		var states:Array<Dynamic>=getAllStatesChildToRootByName(stateName);
-		for(var state:IState in states){
-			names.push(state.name);
-		}
+	private function getAllStateNames(stateName:String):Array<String> {
+		var names:Array<String> = new Array<String>();
+		var states:Array<IState> = getAllStatesChildToRootByName(stateName);
+        for(state in states) {
+            names.push(state.name);
+        }
 		return names;
 	}
 	
-	private function getAllFromsForStateByName(toState:String):Array {
-		var froms:Array<Dynamic>=[];
-		var states:Array<Dynamic>=getAllStatesChildToRootByName(toState);
-		for(var state:IState in states){
-			for(var fromName:String in state.from){
-				if(froms.indexOf(fromName)<0){
+	private function getAllFromsForStateByName(toState:String):Array<String> {
+		var froms:Array<String> = new Array<String>();
+		var states:Array<IState> = getAllStatesChildToRootByName(toState);
+        for (state in states) {
+			for (fromName in state.froms){
+				if (froms.indexOf(fromName) < 0) {
 					froms.push(fromName);
 				}
 			}
