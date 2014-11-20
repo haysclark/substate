@@ -41,6 +41,7 @@ class StateMachineTest
     //  TESTS
     //
     //--------------------------------------------------------------------------
+/**
     @Test
     public function test_UNINITIAL_STATE_IsExpectedValue():Void {
         var expected:String="uninitializedState";
@@ -123,16 +124,34 @@ class StateMachineTest
 
         Assert.areEqual(expectedInitialStateName, _instance.state);
     }
+
+    @Test
+    public function testIStateMock():Void {
+        var mockmock = Mockatoo.mock(IEnter);
+        mockmock.enter("a", "b", "c");
+
+        mockmock.enter(cast anyString, cast anyString, cast anyString).verify();
+    }
+**/
+
     @Test
     public function testInitialStateShouldCallEnterCallbackOfNewState():Void {
-        var initialState:IState = createStoppedState();
+        var mockmock = Mockatoo.mock(IEnter);
+        var initialState:IState = new State(
+            "stopped",
+            {
+                enter: mockmock,
+                from: "*"
+            }
+        );
         _instance.addState(initialState);
         _instance.initialState = initialState.name;
 
-        initialState.onEnter.enter(cast anyString, cast any, cast anyString)
-            .verify();
+       // mockmock.enter(cast anyString, cast anyString, cast anyString).verify();
+        mockmock.enter("stopped", null, "stopped").verify();
     }
 
+/**
     @Test
     public function testInitialStateShouldCallEnterCallbackWithExpectedArguments():Void {
         var initialState:IState = createStoppedState();
@@ -167,28 +186,6 @@ class StateMachineTest
         // test should not error
     }
 
-    /**
-    @Test
-    public function testGetStateByNameShouldUseNullPattern():Void {
-        var unknownStateName:String = "foo";
-
-        var result:IState = _instance.getStateByName(unknownStateName);
-
-        Assert.isNotNull(result);
-        Assert.areEqual(StateMachine.UNKNOWN_STATE, result);
-    }
-
-    @Test
-    public function testGetStateByNameShouldReturnKnownState():Void {
-        var state:IState=createStoppedState();
-        _instance.addState(state);
-        var knownStateName:String=state.name;
-
-        var result:IState=_instance.getStateByName(knownStateName);
-
-        Assert.areEqual(state, result);
-    }
-    **/
 
     @Test
     public function testCanChangeStateToShouldReturnFalseForUnknownState():Void {
@@ -517,6 +514,30 @@ class StateMachineTest
         _instance.changeState("idle");
         mockOnExitMeleeAttack.exit("smash", "idle", "melee attack").verify();
     }
+    **/
+
+    /**
+    @Test
+    public function testGetStateByNameShouldUseNullPattern():Void {
+        var unknownStateName:String = "foo";
+
+        var result:IState = _instance.getStateByName(unknownStateName);
+
+        Assert.isNotNull(result);
+        Assert.areEqual(StateMachine.UNKNOWN_STATE, result);
+    }
+
+    @Test
+    public function testGetStateByNameShouldReturnKnownState():Void {
+        var state:IState=createStoppedState();
+        _instance.addState(state);
+        var knownStateName:String=state.name;
+
+        var result:IState=_instance.getStateByName(knownStateName);
+
+        Assert.areEqual(state, result);
+    }
+    **/
 
     //--------------------------------------------------------------------------
     //

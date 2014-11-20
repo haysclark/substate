@@ -83,6 +83,9 @@ class StateMachine implements IStateMachine {
 	 **/
     public var initialState(null, set):String;
     private function set_initialState(stateName:String):String {
+    	trace("a " + (state == UNINITIALIZED_STATE));
+    	trace("b " + _nameToStates.exists(stateName));
+
         if(state == UNINITIALIZED_STATE && _nameToStates.exists(stateName)) {
             state = stateName;
             executeEnterForStack(stateName, null);
@@ -237,10 +240,12 @@ class StateMachine implements IStateMachine {
 	//
 	//--------------------------------------------------------------------------
 	private function executeEnterForStack(stateTo:String, oldState:String):Void {
+		trace("executeEnterForStack " + stateTo + " , " + oldState);
 		var parentStates:Array<IState> = getAllStatesChildToRootByName(stateTo);
         parentStates.reverse;
         for(i in 0...parentStates.length) {
             var state:IState = parentStates[i];
+            trace("state.onEnter.enter " + stateTo + " , " + oldState + " , " + state.name);
             state.onEnter.enter(stateTo, oldState, state.name);
         }
 	}
