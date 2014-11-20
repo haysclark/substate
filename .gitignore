@@ -11,10 +11,9 @@ test/TestSuite.hx
 
 # Other files and folders
 
-
 # Project files
 .idea/
-*.iml
+#*.iml
 *.iws
 
 # Project files
