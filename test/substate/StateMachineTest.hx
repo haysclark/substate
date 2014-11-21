@@ -1,4 +1,4 @@
-package stateMachine;
+package substate;
 
 import haxe.ds.StringMap;
 import massive.munit.Assert;
@@ -6,11 +6,6 @@ import massive.munit.Assert;
 import mockatoo.Mockatoo.*;
 using mockatoo.Mockatoo;
 
-/**
-* Auto generated ExampleTest for MassiveUnit. 
-* This is an example test class can be used as a template for writing normal and async tests 
-* Refer to munit command line tool for more information (haxelib run munit)
-*/
 class StateMachineTest 
 {
     //----------------------------------
@@ -41,7 +36,7 @@ class StateMachineTest
     //  TESTS
     //
     //--------------------------------------------------------------------------
-/**
+
     @Test
     public function test_UNINITIAL_STATE_IsExpectedValue():Void {
         var expected:String="uninitializedState";
@@ -127,16 +122,15 @@ class StateMachineTest
 
     @Test
     public function testIStateMock():Void {
-        var mockmock = Mockatoo.mock(IEnter);
+        var mockmock = mock(IEnter);
         mockmock.enter("a", "b", "c");
 
         mockmock.enter(cast anyString, cast anyString, cast anyString).verify();
     }
-**/
 
     @Test
     public function testInitialStateShouldCallEnterCallbackOfNewState():Void {
-        var mockmock = Mockatoo.mock(IEnter);
+        var mockmock = mock(IEnter);
         var initialState:IState = new State(
             "stopped",
             {
@@ -147,11 +141,9 @@ class StateMachineTest
         _instance.addState(initialState);
         _instance.initialState = initialState.name;
 
-       // mockmock.enter(cast anyString, cast anyString, cast anyString).verify();
-        mockmock.enter("stopped", null, "stopped").verify();
+        mockmock.enter(cast anyString, cast any, cast anyString).verify();
     }
 
-/**
     @Test
     public function testInitialStateShouldCallEnterCallbackWithExpectedArguments():Void {
         var initialState:IState = createStoppedState();
@@ -185,7 +177,6 @@ class StateMachineTest
 
         // test should not error
     }
-
 
     @Test
     public function testCanChangeStateToShouldReturnFalseForUnknownState():Void {
@@ -427,7 +418,7 @@ class StateMachineTest
         mockObserver.transitionDenied(illegalState.name, initialState.name, cast any).verify();
         Assert.isNotNull(allowedFromStatesResult);
         Assert.areEqual(1, allowedFromStatesResult.length);
-        Assert.areEqual(illegalState.froms, allowedFromStatesResult[0]);
+        Assert.areEqual(illegalState.froms[0], allowedFromStatesResult[0]);
     }
 
     @Test
@@ -514,7 +505,6 @@ class StateMachineTest
         _instance.changeState("idle");
         mockOnExitMeleeAttack.exit("smash", "idle", "melee attack").verify();
     }
-    **/
 
     /**
     @Test

@@ -1,4 +1,4 @@
-package stateMachine;
+package substate;
 
 import String;
 
@@ -8,7 +8,6 @@ class State implements IState {
 	//----------------------------------
 	public static var NO_ENTER:IEnter = new NoopEnter();
     public static var NO_EXIT:IExit = new NoopExit();
-
 	public static inline var WILDCARD:String= "*";
 	public static inline var NO_PARENT:String = null;
 
@@ -17,26 +16,18 @@ class State implements IState {
 	//  CONSTRUCTOR
 	//
 	//--------------------------------------------------------------------------
-	public function new(stateName:String, stateData:Dynamic = null){
+	public function new(stateName:String, params:Dynamic = null){
 		name = stateName;
-		if (stateData == null ){
-		 	stateData = {};
+		if (params == null ){
+            params = {};
 		}
 
-		if(!stateData.from){
-            froms = [WILDCARD];
-		//} else if ($type(stateData.from) == Array<String>()) {
-		// 	from = stateData.from;
-		} else { //} if ($type(stateData.from) == String) {
-           froms = Std.string(stateData.from).split(",");
-		}
+        onEnter = Reflect.hasField(params, "enter") ? cast Reflect.getProperty(params, "enter") : NO_ENTER;
+        onExit = Reflect.hasField(params, "exit") ? cast Reflect.getProperty(params, "exit") : NO_EXIT;
+        parentName = Reflect.hasField(params, "parent") ? cast Reflect.getProperty(params, "parent") : NO_PARENT;
+        froms = getFroms(params);
+    }
 
-        onEnter = (stateData.enter) ? stateData.enter : NO_ENTER;
-		onExit = (stateData.exit) ? stateData.exit : NO_EXIT;
-		
-		parentName = (stateData.parent) ? stateData.parent : NO_PARENT;
-	}
-	
 	//--------------------------------------------------------------------------
 	//
 	//  PUBLIC METHODS
@@ -61,6 +52,21 @@ class State implements IState {
 	 **/
     public var froms(default, null):Array<String>;
 
+    //--------------------------------------------------------------------------
+    //
+    //  PRIVATE METHODS
+    //
+    //--------------------------------------------------------------------------
+    private function getFroms(data:Dynamic):Array<String> {
+        var froms:Array<String> = new Array<String>();
+        if(!Reflect.hasField(data, "from")) {
+            froms.push(WILDCARD);
+        } else {
+            var fromData:String = cast Reflect.getProperty(data, "from");
+            froms = Std.string(fromData).split(",");
+        }
+        return froms;
+    }
 }
 
 private class NoopEnter implements IEnter {

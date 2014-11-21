@@ -1,4 +1,4 @@
-package stateMachine;
+package substate;
 
 interface IStateMachine {
     /**

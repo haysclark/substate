@@ -1,4 +1,4 @@
-package stateMachine;
+package substate;
 
 /**
  * Interface for observing state transitions and denials.  Interface provided so

@@ -1,4 +1,4 @@
-package stateMachine;
+package substate;
 
 /**
  * A Collection class for IObserverTransitions which parrots

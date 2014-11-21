@@ -1,35 +1,33 @@
 ## Flash 9+
-#-main TestMain
-#-lib munit
-#-lib hamcrest
-#-lib mockatoo
-#-cp src
-#-lib mconsole
-#-cp test
-#-swf-version 9
-#-swf build/as3_test.swf
-#--no-inline
-#-debug
-#-D MOCKATOO_LOG
-#
-#--next
-#
-### JavaScript
-#-main TestMain
-#-lib munit
-#-lib hamcrest
-#-lib mockatoo
-#-cp src
-#-lib mconsole
-#-cp test
-#-js build/js_test.js
-#-D MOCKATOO_LOG
-#-D no-unused-var-warnings
-## -v
-## -debug
-#--no-inline
-#
-#--next
+-main TestMain
+-lib munit
+-lib hamcrest
+-lib mockatoo
+-cp src
+-lib mconsole
+-cp test
+-swf-version 9
+-swf build/as3_test.swf
+--no-inline
+-debug
+
+--next
+
+## JavaScript
+-main TestMain
+-lib munit
+-lib hamcrest
+-lib mockatoo
+-cp src
+-lib mconsole
+-cp test
+-js build/js_test.js
+-D no-unused-var-warnings
+# -v
+# -debug
+--no-inline
+
+--next
 
 ## Neko
 -main TestMain
@@ -40,20 +38,18 @@
 -lib mconsole
 -cp test
 -neko build/neko_test.n
--D MOCKATOO_LOG
 --no-inline
 
-#--next
-#
-### CPP
-#-main TestMain
-#-lib munit
-#-lib hamcrest
-#-lib mockatoo
-#-cp src
-#-lib mconsole
-#-cp test
-#-D HXCPP_M64
-#-cpp build/cpp_test
-#-D MOCKATOO_LOG
-#--no-inline
+--next
+
+## CPP
+-main TestMain
+-lib munit
+-lib hamcrest
+-lib mockatoo
+-cp src
+-lib mconsole
+-cp test
+-D HXCPP_M64
+-cpp build/cpp_test
+--no-inline

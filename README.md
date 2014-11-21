@@ -1,4 +1,11 @@
-haxe-hierarchical-state-machine
-===============================
+substate
+=================================
+A Haxe Hierarchical State Machine
 
-Haxe Hierarchical State Machine
+```
+           |_
+     _____|~ |______ ,.
+    ( --  subSTATE  `+|   
+  ~~~~~~~~~~~~~~~~~~~~~~~
+```
+
