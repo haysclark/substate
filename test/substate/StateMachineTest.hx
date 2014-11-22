@@ -83,7 +83,7 @@ class StateMachineTest
     public function testAddStateShouldTakeIStateArgument():Void {
         var knownState:IState = mock(IState);
 
-        _instance.addState(createPlayingState());
+        _instance.addState(knownState);
     }
 
     @Test
@@ -91,6 +91,31 @@ class StateMachineTest
         _instance.addState(createPlayingState());
         _instance.addState(createPausedState());
         _instance.addState(createStoppedState());
+    }
+
+    @Test
+    public function testRemoveStateShouldRemoveState():Void {
+        var knownState:IState = mock(IState);
+        knownState.name.returns("known");
+        _instance.addState(knownState);
+        Assert.isTrue(_instance.getAllStateNames().length == 1);
+
+        _instance.removeState(knownState);
+        Assert.isTrue(_instance.getAllStateNames().length == 0);
+    }
+
+    @Test
+    public function testGetAllStateNamesShould():Void {
+        var knownState:IState = mock(IState);
+        knownState.name.returns("known");
+        _instance.addState(knownState);
+
+        var name = _instance.getAllStateNames()[0];
+
+        Assert.areEqual(name, knownState.name);
+        var state = _instance.getStateByName(name);
+        _instance.removeState(state);
+        Assert.isTrue(_instance.getAllStateNames().length == 0);
     }
 
     @Test
@@ -235,142 +260,6 @@ class StateMachineTest
         Assert.isTrue(result);
     }
 
-    /////
-
-    @Test
-    public function testFindPathShouldForBothUnknownStates():Void {
-        var unknownStartName:String = "foo";
-        var unknownEndName:String = "bar";
-
-        var result:Array<Int> = _instance.findPath(unknownStartName, unknownEndName);
-
-        Assert.isNotNull(result);
-        Assert.areEqual(2, result.length);
-        Assert.areEqual(0, result[0]); // "expected froms incorrect"
-        Assert.areEqual(0, result[1]); // "expected tos incorrect"
-    }
-
-    @Test
-    public function testFindPathShouldReturnZeroWhenStartUnknown():Void {
-        var unknownStartName:String="foo";
-        var endState:IState=createFromWildCardState();
-        var knowEndName:String=endState.name;
-        _instance.addState(endState);
-
-        var result:Array<Int> = _instance.findPath(unknownStartName, knowEndName);
-
-        Assert.isNotNull(result);
-        Assert.areEqual(2, result.length);
-        Assert.areEqual(0, result[0]); // "expected froms incorrect"
-        Assert.areEqual(0, result[1]); // "expected tos incorrect"
-    }
-
-    @Test
-    public function testFindPathShouldReturnZeroWhenEndUnknown():Void {
-        var startState:IState=createFromWildCardState();
-        var knowStartName:String=startState.name;
-        _instance.addState(startState);
-        var unknownEndName:String="foo";
-
-        var result:Array<Int> = _instance.findPath(knowStartName, unknownEndName);
-
-        Assert.isNotNull(result);
-        Assert.areEqual(2, result.length);
-        Assert.areEqual(0, result[0]); // "expected froms incorrect"
-        Assert.areEqual(0, result[1]); // "expected tos incorrect"
-    }
-
-    @Test
-    public function testFindPathShouldReturnExpectedForOneToOnePath():Void {
-        var startState:IState=createStoppedState();
-        var startStateName:String=startState.name;
-        _instance.addState(startState);
-        var endState:IState=createPlayingState();
-        var endStateName:String=endState.name;
-        _instance.addState(endState);
-
-        var result:Array<Int> = _instance.findPath(startStateName, endStateName);
-
-        Assert.isNotNull(result);
-        Assert.areEqual(2, result.length);
-        Assert.areEqual(1, result[0]); // "expected froms incorrect"
-        Assert.areEqual(1, result[1]); // "expected tos incorrect"
-    }
-
-    @Test
-    public function testFindPathShouldReturnExpectedForLongPath():Void {
-        setupQuakeStateExample();
-
-        var result:Array<Int> = _instance.findPath("idle", "punch");
-
-        Assert.isNotNull(result);
-        Assert.areEqual(2, result.length);
-        Assert.areEqual(1, result[0]); // "expected froms incorrect"
-        Assert.areEqual(3, result[1]); // "expected tos incorrect"
-    }
-
-    @Test
-    public function testFindPathShouldReturnExpectedForLongPathReversed():Void {
-        setupQuakeStateExample();
-
-        var result:Array<Int> = _instance.findPath("punch", "idle");
-
-        Assert.isNotNull(result);
-        Assert.areEqual(2, result.length);
-        Assert.areEqual(3, result[0]); // "expected froms incorrect"
-        Assert.areEqual(1, result[1]); // "expected tos incorrect"
-    }
-
-    @Test
-    public function testGetParentByNameShouldReturnUnknownStateIfNotKnown():Void {
-        var unknownStateName:String = "foo";
-
-        var result:IState = _instance.getParentStateByName(unknownStateName);
-
-        Assert.isNotNull(result); // "expecting Null Pattern"
-        Assert.areEqual(StateMachine.UNKNOWN_STATE, result);
-    }
-
-    @Test
-    public function testGetParentByNameShouldReturnUnknownParentStateIfParentNotKnown():Void {
-        var knownChildState:IState = createChildState();
-        _instance.addState(knownChildState);
-        var knownChildStateName:String=knownChildState.name;
-
-        var result:IState=_instance.getParentStateByName(knownChildStateName);
-
-        Assert.isNotNull(result); // "expecting Null Pattern"
-        Assert.areEqual(StateMachine.UNKNOWN_PARENT_STATE, result);
-    }
-
-    @Test
-    public function testGetParentByNameShouldReturnParentStateOfChildState():Void {
-        var childState:IState = createChildState();
-        _instance.addState(childState);
-        var knownChildStateName:String = childState.name;
-        var expectedParentState:IState = createParentState();
-        _instance.addState(expectedParentState);
-
-        var result:IState=_instance.getParentStateByName(knownChildStateName);
-
-        Assert.isNotNull(result); // "expecting Null Pattern"
-        Assert.areEqual(expectedParentState, result);
-    }
-
-    @Test
-    public function testGetParentByNameShouldReturnNoParentStateForChildWithNoParent():Void {
-        var stateWithNoParent:IState=createFirstState();
-        _instance.addState(stateWithNoParent);
-        var stateWithNoParentName:String=stateWithNoParent.name;
-
-        var result:IState=_instance.getParentStateByName(stateWithNoParentName);
-
-        Assert.isNotNull(result); // "expecting Null Pattern"
-        Assert.areEqual(StateMachine.NO_PARENT_STATE, result);
-    }
-
-    //////
-
     @Test
     public function testChangeStateShouldDoNothingForUnknownState():Void {
         var initialState:IState=createStoppedState();
@@ -513,7 +402,6 @@ class StateMachineTest
             .verify();
     }
 
-   /**
     @Test
     public function testGetStateByNameShouldUseNullPattern():Void {
         var unknownStateName:String = "foo";
@@ -534,8 +422,140 @@ class StateMachineTest
 
         Assert.areEqual(state, result);
     }
-    **/
 
+    /**
+    @Test
+    public function testFindPathShouldForBothUnknownStates():Void {
+        var unknownStartName:String = "foo";
+        var unknownEndName:String = "bar";
+
+        var result:Array<Int> = _instance.findPath(unknownStartName, unknownEndName);
+
+        Assert.isNotNull(result);
+        Assert.areEqual(2, result.length);
+        Assert.areEqual(0, result[0]); // "expected froms incorrect"
+        Assert.areEqual(0, result[1]); // "expected tos incorrect"
+    }
+
+    @Test
+    public function testFindPathShouldReturnZeroWhenStartUnknown():Void {
+        var unknownStartName:String="foo";
+        var endState:IState=createFromWildCardState();
+        var knowEndName:String=endState.name;
+        _instance.addState(endState);
+
+        var result:Array<Int> = _instance.findPath(unknownStartName, knowEndName);
+
+        Assert.isNotNull(result);
+        Assert.areEqual(2, result.length);
+        Assert.areEqual(0, result[0]); // "expected froms incorrect"
+        Assert.areEqual(0, result[1]); // "expected tos incorrect"
+    }
+
+    @Test
+    public function testFindPathShouldReturnZeroWhenEndUnknown():Void {
+        var startState:IState=createFromWildCardState();
+        var knowStartName:String=startState.name;
+        _instance.addState(startState);
+        var unknownEndName:String="foo";
+
+        var result:Array<Int> = _instance.findPath(knowStartName, unknownEndName);
+
+        Assert.isNotNull(result);
+        Assert.areEqual(2, result.length);
+        Assert.areEqual(0, result[0]); // "expected froms incorrect"
+        Assert.areEqual(0, result[1]); // "expected tos incorrect"
+    }
+
+    @Test
+    public function testFindPathShouldReturnExpectedForOneToOnePath():Void {
+        var startState:IState=createStoppedState();
+        var startStateName:String=startState.name;
+        _instance.addState(startState);
+        var endState:IState=createPlayingState();
+        var endStateName:String=endState.name;
+        _instance.addState(endState);
+
+        var result:Array<Int> = _instance.findPath(startStateName, endStateName);
+
+        Assert.isNotNull(result);
+        Assert.areEqual(2, result.length);
+        Assert.areEqual(1, result[0]); // "expected froms incorrect"
+        Assert.areEqual(1, result[1]); // "expected tos incorrect"
+    }
+
+    @Test
+    public function testFindPathShouldReturnExpectedForLongPath():Void {
+        setupQuakeStateExample();
+
+        var result:Array<Int> = _instance.findPath("idle", "punch");
+
+        Assert.isNotNull(result);
+        Assert.areEqual(2, result.length);
+        Assert.areEqual(1, result[0]); // "expected froms incorrect"
+        Assert.areEqual(3, result[1]); // "expected tos incorrect"
+    }
+
+    @Test
+    public function testFindPathShouldReturnExpectedForLongPathReversed():Void {
+        setupQuakeStateExample();
+
+        var result:Array<Int> = _instance.findPath("punch", "idle");
+
+        Assert.isNotNull(result);
+        Assert.areEqual(2, result.length);
+        Assert.areEqual(3, result[0]); // "expected froms incorrect"
+        Assert.areEqual(1, result[1]); // "expected tos incorrect"
+    }
+
+    @Test
+    public function testGetParentByNameShouldReturnUnknownStateIfNotKnown():Void {
+        var unknownStateName:String = "foo";
+
+        var result:IState = _instance.getParentStateByName(unknownStateName);
+
+        Assert.isNotNull(result); // "expecting Null Pattern"
+        Assert.areEqual(StateMachine.UNKNOWN_STATE, result);
+    }
+
+    @Test
+    public function testGetParentByNameShouldReturnUnknownParentStateIfParentNotKnown():Void {
+        var knownChildState:IState = createChildState();
+        _instance.addState(knownChildState);
+        var knownChildStateName:String=knownChildState.name;
+
+        var result:IState=_instance.getParentStateByName(knownChildStateName);
+
+        Assert.isNotNull(result); // "expecting Null Pattern"
+        Assert.areEqual(StateMachine.UNKNOWN_PARENT_STATE, result);
+    }
+
+    @Test
+    public function testGetParentByNameShouldReturnParentStateOfChildState():Void {
+        var childState:IState = createChildState();
+        _instance.addState(childState);
+        var knownChildStateName:String = childState.name;
+        var expectedParentState:IState = createParentState();
+        _instance.addState(expectedParentState);
+
+        var result:IState=_instance.getParentStateByName(knownChildStateName);
+
+        Assert.isNotNull(result); // "expecting Null Pattern"
+        Assert.areEqual(expectedParentState, result);
+    }
+
+    @Test
+    public function testGetParentByNameShouldReturnNoParentStateForChildWithNoParent():Void {
+        var stateWithNoParent:IState=createFirstState();
+        _instance.addState(stateWithNoParent);
+        var stateWithNoParentName:String=stateWithNoParent.name;
+
+        var result:IState=_instance.getParentStateByName(stateWithNoParentName);
+
+        Assert.isNotNull(result); // "expecting Null Pattern"
+        Assert.areEqual(StateMachine.NO_PARENT_STATE, result);
+    }
+    **/
     //--------------------------------------------------------------------------
     //
     //  PRIVATE METHODS

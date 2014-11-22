@@ -1,14 +1,6 @@
 package substate;
 
 interface IStateMachine {
-    /**
-	 * Adds a new state
-	 * @param stateName	The name of the new State
-	 * @param stateData	A hash containing state enter and exit callbacks and allowed states to transition from
-	 * The "from" property can be a string or and array with the state names or * to allow any transition
-	 **/
-	function addState(newState:IState):Void;
-
 	/**
 	 * Sets the first state, calls enter callback and dispatches TRANSITION_COMPLETE
 	 * These will only occour if no state is defined
@@ -26,7 +18,30 @@ interface IStateMachine {
 	 */
 	function hasStateByName(name:String):Bool;
 
-	/**
+    /**
+	 * Adds a new state
+	 * @param state The state to add
+	 **/
+    function addState(state:IState):Void;
+
+    /**
+	 * Removes a state
+	 * @param state The state to add
+	 **/
+    function removeState(state:IState):Void;
+
+    /**
+	 * Gets a state by it's name
+	 * @param name of the state
+	 **/
+    function getStateByName(name:String):IState;
+
+    /**
+	 * Gets all states names
+	 **/
+    function getAllStateNames():Array<String>;
+
+    /**
 	 * Verifies if a transition can be made from the current state to the
 	 * state passed as param
 	 *
