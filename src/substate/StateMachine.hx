@@ -141,12 +141,14 @@ class StateMachine implements IStateMachine {
 		// call exit and enter callbacks(if they exits)
 		var path:Array<Int> = findPath(state, stateTo);
 		if (path[0] > 0) { // hasFroms
+            //trace("[StateMachine] hasFroms");
 			executeExitForStack(state, stateTo, path[0]);
 		}
 		
 		var oldState:String = state;
 		state = stateTo;
 		if (path[1] > 0) { // hasTos
+            //trace("[StateMachine] hasTos");
 			executeEnterForStack(stateTo, oldState);
 		}
 
@@ -155,13 +157,13 @@ class StateMachine implements IStateMachine {
 	}
 	
 	private function executeExitForStack(state:String, stateTo:String, n:Int):Void {
-		getStateByName(state).onExit.exit(state, stateTo, state);
+        getStateByName(state).exit(state, stateTo, state);
 		var parentState:IState = getStateByName(state);
         for (i in 0 ... n - 1) {
 			parentState = getParentStateByName(parentState.name); // parentState.parent;
-			if (parentState.onExit != null) { // needed? these should always be NOOPS
-				parentState.onExit.exit(state, stateTo, parentState.name);
-			}
+			//if (parentState.exit != null) { // needed? these should always be NOOPS
+				parentState.exit(state, stateTo, parentState.name);
+			//}
 		}
 	}
 	
@@ -241,7 +243,7 @@ class StateMachine implements IStateMachine {
         parentStates.reverse;
         for(i in 0...parentStates.length) {
             var state:IState = parentStates[i];
-            state.onEnter.enter(stateTo, oldState, state.name);
+            state.enter(stateTo, oldState, state.name);
         }
 	}
 	

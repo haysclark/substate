@@ -1,4 +1,4 @@
-substate-hx
+substate
 =================================
 A Haxe Hierarchical State Machine
 

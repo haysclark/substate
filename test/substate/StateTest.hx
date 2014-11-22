@@ -7,10 +7,7 @@ using mockatoo.Mockatoo;
 
 class StateTest {
 
-    @:mock
     public var mockIEnter:IEnter;
-
-    @:mock
     public var mockIExit:IExit;
 
     //----------------------------------
@@ -48,35 +45,43 @@ class StateTest {
     }
 
     @Test
-    public function testOnEnterIsSetToExpectExpectedValue():Void {
-        var expected = mockIEnter;
+    public function testEnterIsExecuted():Void {
+        var expectedA = "AAA";
+        var expectedB = "BBB";
+        var expectedC = "CCC";
 
-        Assert.areEqual(expected, _instance.onEnter);
+        _instance.enter(expectedA, expectedB, expectedC);
+
+        mockIEnter.enter(expectedA, expectedB, expectedC)
+            .verify();
     }
 
     @Test
     public function testOnEnterIsSetToNoopWhenNotInParams():Void {
-        var expected = State.NO_ENTER;
         _instance = createNoopTest();
 
-        Assert.isNotNull(_instance.onEnter);
-        Assert.areEqual(expected, _instance.onEnter);
+        Assert.isNotNull(_instance.enter);
+        _instance.enter("a", "b", "c");
     }
 
     @Test
-    public function testOnExitIsSetToExpectExpectedValue():Void {
-        var expected = mockIExit;
+    public function testExitIsExecuted():Void {
+        var expectedA = "AAA";
+        var expectedB = "BBB";
+        var expectedC = "CCC";
 
-        Assert.areEqual(expected, _instance.onExit);
+        _instance.exit(expectedA, expectedB, expectedC);
+
+        mockIExit.exit(expectedA, expectedB, expectedC)
+            .verify();
     }
 
     @Test
     public function testOnExitIsSetToNoopWhenNotInParams():Void {
-        var expected = State.NO_EXIT;
         _instance = createNoopTest();
 
-        Assert.isNotNull(_instance.onExit);
-        Assert.areEqual(expected, _instance.onExit);
+        Assert.isNotNull(_instance.exit);
+        _instance.exit("a", "b", "c");
     }
 
     @Test
@@ -118,6 +123,9 @@ class StateTest {
     //
     //--------------------------------------------------------------------------
     private function createTestState():State {
+        mockIEnter = mock(IEnter);
+        mockIExit = mock(IExit);
+
         var params =  {
             enter: mockIEnter,
             exit: mockIExit,

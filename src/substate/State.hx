@@ -6,10 +6,17 @@ class State implements IState {
 	//----------------------------------
 	//  CONSTS
 	//----------------------------------
-	public static var NO_ENTER:IEnter = new NoopEnter();
-    public static var NO_EXIT:IExit = new NoopExit();
 	public static inline var WILDCARD:String= "*";
-	public static inline var NO_PARENT:String = null;
+    public static inline var NO_PARENT:String = null;
+
+    private static var NO_ENTER:IEnter = new NoopEnter();
+    private static var NO_EXIT:IExit = new NoopExit();
+
+    //----------------------------------
+    //  vars
+    //----------------------------------
+    private var _onEnter:IEnter;
+    private var _onExit:IExit;
 
 	//--------------------------------------------------------------------------
 	//
@@ -21,11 +28,10 @@ class State implements IState {
 		if (params == null ){
             params = {};
 		}
-
-        onEnter = Reflect.hasField(params, "enter") ? cast Reflect.getProperty(params, "enter") : NO_ENTER;
-        onExit = Reflect.hasField(params, "exit") ? cast Reflect.getProperty(params, "exit") : NO_EXIT;
         parentName = Reflect.hasField(params, "parent") ? cast Reflect.getProperty(params, "parent") : NO_PARENT;
         froms = getFroms(params);
+        _onEnter = Reflect.hasField(params, "enter") ? cast Reflect.getProperty(params, "enter") : NO_ENTER;
+        _onExit = Reflect.hasField(params, "exit") ? cast Reflect.getProperty(params, "exit") : NO_EXIT;
     }
 
 	//--------------------------------------------------------------------------
@@ -38,19 +44,24 @@ class State implements IState {
 	//----------------------------------
     public var name(default, null):String;
 
-    /** the parent States ID(optional)**/
+    /**
+     * the parent States ID(optional)
+     **/
     public var parentName(default, null):String;
 
-    /** enter state Handler(optional)**/
-    public var onEnter(default, null):IEnter;
-
-    /** exit state Handler(optional)**/
-    public var onExit(default, null):IExit;
-
-    /** the States which can transition to this State
+    /**
+     * the States which can transition to this State
 	 * will default to *(WILDCARD)is not set
 	 **/
     public var froms(default, null):Array<String>;
+
+    public function enter(toState:String, fromState:String, currentState:String):Void {
+        _onEnter.enter(toState, fromState, currentState);
+    }
+
+    public function exit(fromState:String, toState:String, currentState:String = null):Void {
+        _onExit.exit(fromState, toState, currentState);
+    }
 
     //--------------------------------------------------------------------------
     //

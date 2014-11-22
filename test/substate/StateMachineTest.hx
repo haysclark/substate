@@ -36,7 +36,6 @@ class StateMachineTest
     //  TESTS
     //
     //--------------------------------------------------------------------------
-
     @Test
     public function test_UNINITIAL_STATE_IsExpectedValue():Void {
         var expected:String="uninitializedState";
@@ -146,12 +145,13 @@ class StateMachineTest
 
     @Test
     public function testInitialStateShouldCallEnterCallbackWithExpectedArguments():Void {
-        var initialState:IState = createStoppedState();
-        _instance.addState(initialState);
+        var mockState =  mock(IState);
+        mockState.name.returns("foo");
+        _instance.addState(mockState);
 
-        _instance.initialState = initialState.name;
+        _instance.initialState = mockState.name;
 
-        initialState.onEnter.enter(initialState.name, cast any, cast anyString)
+        mockState.enter(mockState.name, cast any, cast anyString)
             .verify();
     }
 
@@ -167,6 +167,7 @@ class StateMachineTest
         mockObserver.transitionComplete(initialState.name, null)
             .verify();
     }
+
 
     @Test
     public function testInitialStateShouldUseNullPatternWhenCallingEnterCallbackOfNewState():Void {
@@ -423,7 +424,8 @@ class StateMachineTest
 
     @Test
     public function testChangeStateShouldCallFromStatesExitHandler():Void {
-        var initialState = createFirstState();
+        var initialState = mock(IState);
+        initialState.name.returns("first");
         _instance.addState(initialState);
         _instance.initialState = initialState.name;
         var nextState = createSecondState();
@@ -432,12 +434,14 @@ class StateMachineTest
 
         _instance.changeState(nextStateName);
 
-        initialState.onExit.exit(cast any, cast any, cast any).verify();
+        initialState.exit(cast any, cast any, cast any)
+            .verify();
     }
 
     @Test
     public function testChangeStateShouldCallFromStatesExitHandlerWithExpectedPayload():Void {
-        var initialState = createFirstState();
+        var initialState = mock(IState);
+        initialState.name.returns("first");
         _instance.addState(initialState);
         _instance.initialState = initialState.name;
         var nextState = createSecondState();
@@ -446,7 +450,8 @@ class StateMachineTest
 
         _instance.changeState(nextStateName);
 
-        initialState.onExit.exit(initialState.name, nextState.name, initialState.name).verify();
+        initialState.exit(initialState.name, nextState.name, initialState.name)
+            .verify();
     }
 
     @Test
@@ -500,13 +505,15 @@ class StateMachineTest
         _instance.initialState="idle";
 
         _instance.changeState("smash");
-        mockOnExitMeleeAttack.exit(cast any, cast any, cast any).verify(never);
+        mockOnExitMeleeAttack.exit(cast any, cast any, cast any)
+            .verify(never);
 
         _instance.changeState("idle");
-        mockOnExitMeleeAttack.exit("smash", "idle", "melee attack").verify();
+        mockOnExitMeleeAttack.exit("smash", "idle", "melee attack")
+            .verify();
     }
 
-    /**
+   /**
     @Test
     public function testGetStateByNameShouldUseNullPattern():Void {
         var unknownStateName:String = "foo";
