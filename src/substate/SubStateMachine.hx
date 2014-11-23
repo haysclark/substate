@@ -48,7 +48,6 @@ class SubStateMachine implements ISubStateMachine {
             _nameToStates.remove(key);
         }
         _nameToStates = null;
-
 		_observerCollection.destroy();
 		_observerCollection=null;
 	}
