@@ -13,7 +13,7 @@ class StateTest {
     //----------------------------------
     //  vars
     //----------------------------------
-    private var _instance:State;
+    private var _instance:StateBuilder;
 
     //--------------------------------------------------------------------------
     //
@@ -93,7 +93,7 @@ class StateTest {
 
     @Test
     public function testParentIsSetToNoopWhenNotInParams():Void {
-        var expected = State.NO_PARENT;
+        var expected = StateBuilder.NO_PARENT;
         _instance = createNoopTest();
 
         Assert.areEqual(expected, _instance.parentName);
@@ -109,7 +109,7 @@ class StateTest {
 
     @Test
     public function testFromsAreSetToWildCardWhenNotInParams():Void {
-        var expected = State.WILDCARD;
+        var expected = StateBuilder.WILDCARD;
         _instance = createNoopTest();
 
         Assert.isNotNull(_instance.froms);
@@ -122,7 +122,7 @@ class StateTest {
     //  PRIVATE METHODS
     //
     //--------------------------------------------------------------------------
-    private function createTestState():State {
+    private function createTestState():StateBuilder {
         mockIEnter = mock(IEnter);
         mockIExit = mock(IExit);
 
@@ -132,13 +132,13 @@ class StateTest {
             from: "paused,stopped",
             parent: "root"
         };
-        return new State(
+        return new StateBuilder(
             "playing",
             params
         );
     }
 
-    private function createNoopTest():State {
-        return new State("noop");
+    private function createNoopTest():StateBuilder {
+        return new StateBuilder("noop");
     }
 }

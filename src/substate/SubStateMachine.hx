@@ -8,7 +8,9 @@ class SubStateMachine implements ISubStateMachine {
 	//  CONSTS
 	//----------------------------------
 	public static inline var UNINITIALIZED_STATE:String = "uninitializedState";
-	
+    public static inline var WILDCARD:String= "*";
+    public static inline var NO_PARENT:String = null;
+
 	// NOOPs
 	private static var UNKNOWN_STATE:IState = new NoopState("unknown.state");
     private static var UNKNOWN_PARENT_STATE:IState = new NoopState("unknown.parent.state");
@@ -274,7 +276,7 @@ class SubStateMachine implements ISubStateMachine {
     private function allowTransitionFrom(fromState:String, toState:String):Bool {
         var fromStateAllNames:Array<String> = getAllStatesForState(fromState);
         var toStateFroms:Array<String> = getAllFromsForStateByName(toState);
-        return (toStateFroms.indexOf(State.WILDCARD) >= 0
+        return (toStateFroms.indexOf(WILDCARD) >= 0
         || doTransitionsMatch(fromStateAllNames, toStateFroms));
     }
 
@@ -283,7 +285,7 @@ class SubStateMachine implements ISubStateMachine {
 		while (hasState(name)) {
 			var state:IState = getStateByUID(name);
 			states.push(state);
-			if (state.parentName == State.NO_PARENT) {
+			if (state.parentName == StateBuilder.NO_PARENT) {
 				break;
 			}
 			name = state.parentName;
@@ -328,7 +330,7 @@ class SubStateMachine implements ISubStateMachine {
         } else {
             var stateName:IState=getStateByUID(name);
             var parentName:String=stateName.parentName;
-            if(parentName==State.NO_PARENT){
+            if(parentName==StateBuilder.NO_PARENT){
                 return NO_PARENT_STATE;
             } else if(!hasState(parentName)){
                 return UNKNOWN_PARENT_STATE;

@@ -2,46 +2,52 @@ package substate;
 
 import String;
 
-class State implements IState {
-	//----------------------------------
-	//  CONSTS
-	//----------------------------------
-	public static inline var WILDCARD:String= "*";
-    public static inline var NO_PARENT:String = null;
-
+class StateBuilder {
     private static var NO_ENTER:IEnter = new NoopEnter();
     private static var NO_EXIT:IExit = new NoopExit();
 
+    public function new() {}
+}
+
+private class State implements IState {
     //----------------------------------
     //  vars
     //----------------------------------
     private var _onEnter:IEnter;
     private var _onExit:IExit;
 
-	//--------------------------------------------------------------------------
-	//
-	//  CONSTRUCTOR
-	//
-	//--------------------------------------------------------------------------
-	public function new(stateName:String, params:Dynamic = null){
-		name = stateName;
-		if (params == null ){
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
+    public function new() {}
+
+    //--------------------------------------------------------------------------
+    //
+    //  PUBLIC METHODS
+    //
+    //--------------------------------------------------------------------------
+    public function build(stateName:String, params:Dynamic = null):IState {
+        var state = new State(stateName);
+        name = stateName;
+        if (params == null ){
             params = {};
-		}
+        }
         parentName = Reflect.hasField(params, "parent") ? cast Reflect.getProperty(params, "parent") : NO_PARENT;
         froms = getFroms(params);
         _onEnter = Reflect.hasField(params, "enter") ? cast Reflect.getProperty(params, "enter") : NO_ENTER;
         _onExit = Reflect.hasField(params, "exit") ? cast Reflect.getProperty(params, "exit") : NO_EXIT;
     }
 
-	//--------------------------------------------------------------------------
-	//
-	//  PUBLIC METHODS
-	//
-	//--------------------------------------------------------------------------
-	//----------------------------------
-	//  IState
-	//----------------------------------
+    //--------------------------------------------------------------------------
+    //
+    //  PUBLIC METHODS
+    //
+    //--------------------------------------------------------------------------
+    //----------------------------------
+    //  IState
+    //----------------------------------
     public var name(default, null):String;
 
     /**
@@ -78,6 +84,26 @@ class State implements IState {
         }
         return froms;
     }
+}
+
+private class State implements IState {
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
+    public function new(uid:String) {
+        name = uid;
+    }
+
+    //----------------------------------
+    //  IState
+    //----------------------------------
+    public var name(default, null):String;
+    public var parentName(default, null):String;
+    public var froms(default, null):Array<String>;
+    public function enter(toState:String, fromState:String, currentState:String):Void {}
+    public function exit(fromState:String, toState:String, currentState:String = null):Void {}
 }
 
 private class NoopEnter implements IEnter {
