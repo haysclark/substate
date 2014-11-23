@@ -1,17 +1,18 @@
 package substate;
 
+import substate.core.ObserverTransitionCollection;
 import haxe.ds.StringMap;
 
-class StateMachine implements IStateMachine {
+class SubStateMachine implements ISubStateMachine {
 	//----------------------------------
 	//  CONSTS
 	//----------------------------------
 	public static inline var UNINITIALIZED_STATE:String = "uninitializedState";
 	
 	// NOOPs
-	public static var UNKNOWN_STATE:IState = new State("unknown.state");
-	public static var UNKNOWN_PARENT_STATE:IState = new State("unknown.parent.state");
-	public static var NO_PARENT_STATE:IState = new State("no.parent.state");
+	private static var UNKNOWN_STATE:IState = new NoopState("unknown.state");
+    private static var UNKNOWN_PARENT_STATE:IState = new NoopState("unknown.parent.state");
+    private static var NO_PARENT_STATE:IState = new NoopState("no.parent.state");
 
     //----------------------------------
 	//  vars
@@ -35,7 +36,7 @@ class StateMachine implements IStateMachine {
 	//
 	//--------------------------------------------------------------------------
 	public function init():Void {
-        state = UNINITIALIZED_STATE;
+        currentState = UNINITIALIZED_STATE;
 
         _nameToStates = new StringMap<IState>();
 	 	_observerCollection = new ObserverTransitionCollection();
@@ -51,85 +52,57 @@ class StateMachine implements IStateMachine {
 		_observerCollection.destroy();
 		_observerCollection=null;
 	}
-	
-	public function subscribe(observer:IObserverTransition):Void {
-		_observerCollection.subscribe(observer);
-	}
-	
-	public function unsubscribe(observer:IObserverTransition):Void {
-		_observerCollection.unsubscribe(observer);
-	}
-	
+
 	//----------------------------------
 	//  IStateMachine
 	//----------------------------------
-	/**
-	 * Sets the first state, calls enter callback and dispatches TRANSITION_COMPLETE
-	 * These will only occour if no state is defined
-	 * @param stateName	The name of the State
-	 **/
-    public var initialState(null, set):String;
-    private function set_initialState(stateName:String):String {
-        if(state == UNINITIALIZED_STATE && _nameToStates.exists(stateName)) {
-            state = stateName;
-            executeEnterForStack(stateName, null);
-            notifyTransitionComplete(stateName, null);
-        }
-        return initialState;
-    }
-
-	/**
-	 * Getters for the current state and for the Dictionary of states
-	 */
-    public var state(default, null):String;
-
-    /**
-	 * Verifies if a state name is known by StateMachine.
-	 * 
-	 * @param stateName	The name of the State
-	 **/
-    public function hasStateByName(name:String):Bool {
-        return _nameToStates.exists(name);
-    }
-
     /**
 	 * Adds a new state
 	 * @param state The state to add
 	 **/
     public function addState(state:IState):Void {
         if (_nameToStates.exists(state.name)) {
-            removeState(state);
+            removeState(state.name);
         }
         _nameToStates.set(state.name, state);
     }
 
     /**
-	 * Removes a state
-	 * @param state The state to add
+	 * Removes a state by Unique ID
+	 * @param state Unique ID
 	 **/
-    public function removeState(state:IState):Void {
-        for (cur in _nameToStates.iterator()) {
-            if(cur == state) {
-                _nameToStates.remove(cur.name);
-            }
+    public function removeState(stateUID:String):Void {
+        _nameToStates.remove(stateUID);
+        if(currentState == stateUID) {
+            currentState = UNINITIALIZED_STATE;
         }
     }
 
     /**
-	 * Gets a state by it's name
-	 * @param name of the state
+	 * Removes all states.
 	 **/
-    public function getStateByName(name:String):IState {
-        return hasStateByName(name) ? _nameToStates.get(name) : UNKNOWN_STATE;
+    public function flushStates():Void {
+        for (uid in _nameToStates.keys()) {
+            removeState(uid);
+        }
     }
 
     /**
-	 * Gets all states names
+	 * Verifies if a state name is known by StateMachine.
+	 *
+	 * @param stateName	The name of the State
 	 **/
-    public function getAllStateNames():Array<String> {
+    public function hasState(stateUID:String):Bool {
+        return _nameToStates.exists(stateUID);
+    }
+
+    /**
+	 * Gets all states Unique IDs
+	 **/
+    public function getAllStates():Array<String> {
         var names = new Array<String>();
-        for (state in _nameToStates.iterator()) {
-            names.push(state.name);
+        for (uid in _nameToStates.keys()) {
+            names.push(uid);
         }
         return names;
     }
@@ -140,10 +113,10 @@ class StateMachine implements IStateMachine {
 	 *
 	 * @param stateName	The name of the State
 	 **/
-    public function canChangeStateTo(toState:String):Bool {
-        return(hasStateByName(toState)
-        && toState != state
-        && allowTransitionFrom(state, toState)
+    public function canTransition(stateUID:String):Bool {
+        return(hasState(stateUID)
+        && stateUID != currentState
+        && allowTransitionFrom(currentState, stateUID)
         );
     }
 
@@ -151,38 +124,78 @@ class StateMachine implements IStateMachine {
 	 * Changes the current state
 	 * This will only be done if the Intended state allows the transition from the current state
 	 * Changing states will call the exit callback for the exiting state and enter callback for the entering state
-	 * @param stateTo	The name of the state to transition to
+	 * @param stateUID	The name of the state to transition to
 	 **/
-    public function changeState(stateTo:String):Void {
+    public function doTransition(stateUID:String):Void {
         // If there is no state that matches stateTo
-        if (!hasStateByName(stateTo)) {
+        if (!hasState(stateUID)) {
             //trace("[StateMachine] Cannot make transition:State " + stateTo + " is not defined");
             return;
         }
 
         // If current state is not allowed to make this transition
-        if (!canChangeStateTo(stateTo)) {
-           //trace("[StateMachine] Transition to " + stateTo + " from " + state + " denied");
-            notifyTransitionDenied(state, stateTo, getAllFromsForStateByName(stateTo));
+        if (!canTransition(stateUID)) {
+            //trace("[StateMachine] Transition to " + stateTo + " from " + state + " denied");
+            notifyTransitionDenied(currentState, stateUID, getAllFromsForStateByName(stateUID));
             return;
         }
 
         // call exit and enter callbacks(if they exits)
-        var path:Array<Int> = findPath(state, stateTo);
+        var path:Array<Int> = findPath(currentState, stateUID);
         if (path[0] > 0) { // hasFroms
             //trace("[StateMachine] hasFroms");
-            executeExitForStack(state, stateTo, path[0]);
+            executeExitForStack(currentState, stateUID, path[0]);
         }
 
-        var oldState:String = state;
-        state = stateTo;
+        var oldState:String = currentState;
+        currentState = stateUID;
         if (path[1] > 0) { // hasTos
-        //trace("[StateMachine] hasTos");
-            executeEnterForStack(stateTo, oldState);
+            //trace("[StateMachine] hasTos");
+            executeEnterForStack(stateUID, oldState);
         }
 
         //trace("[StateMachine] State Changed to " + state);
-        notifyTransitionComplete(stateTo, oldState);
+        notifyTransitionComplete(stateUID, oldState);
+    }
+    
+    /**
+	 * Sets the first state, calls enter callback and dispatches TRANSITION_COMPLETE
+	 * These will only occour if no state is defined
+	 * @param stateUID	The Unique ID of the State
+	 **/
+    public var initialState(default, set):String;
+    private function set_initialState(stateName:String):String {
+        if(currentState == UNINITIALIZED_STATE && _nameToStates.exists(stateName)) {
+            currentState = stateName;
+            executeEnterForStack(stateName, null);
+            notifyTransitionComplete(stateName, null);
+        }
+        return initialState;
+    }
+
+    /**
+	 *	Gets the Unique ID of the current state
+	 */
+    public var currentState(default, null):String;
+
+    /**
+	 * Verifies if a transition can be made from the current state to the
+	 * state passed as param
+	 *
+	 * @param stateName	The name of the State
+	 **/
+    public function subscribe(observer:IObserverTransition):Void {
+        _observerCollection.subscribe(observer);
+    }
+
+    /**
+	 * Verifies if a transition can be made from the current state to the
+	 * state passed as param
+	 *
+	 * @param stateName	The name of the State
+	 **/
+    public function unsubscribe(observer:IObserverTransition):Void {
+        _observerCollection.unsubscribe(observer);
     }
 
     //--------------------------------------------------------------------------
@@ -200,8 +213,8 @@ class StateMachine implements IStateMachine {
 	}
 
     private function executeExitForStack(state:String, stateTo:String, n:Int):Void {
-        getStateByName(state).exit(state, stateTo, state);
-        var parentState:IState = getStateByName(state);
+        getStateByUID(state).exit(state, stateTo, state);
+        var parentState:IState = getStateByUID(state);
         for (i in 0 ... n - 1) {
             parentState = getParentStateByName(parentState.name); // parentState.parent;
             parentState.exit(state, stateTo, parentState.name);
@@ -235,11 +248,11 @@ class StateMachine implements IStateMachine {
         // Verifies if the states are in the same "branch" or have a common parent
         var froms:Int = 0;
         var tos:Int = 0;
-        if (hasStateByName(stateFrom) && hasStateByName(stateTo)) {
-            var fromState:IState = getStateByName(stateFrom);
+        if (hasState(stateFrom) && hasState(stateTo)) {
+            var fromState:IState = getStateByUID(stateFrom);
             while ((fromState != null) && (fromState != UNKNOWN_STATE) && (fromState != UNKNOWN_PARENT_STATE)) {
                 tos = 0;
-                var toState:IState = getStateByName(stateTo);
+                var toState:IState = getStateByUID(stateTo);
                 while ((toState != null) && (toState != UNKNOWN_STATE) && (toState != UNKNOWN_PARENT_STATE)) {
                     if (fromState==toState) {
                         // They are in the same brach or have
@@ -268,8 +281,8 @@ class StateMachine implements IStateMachine {
 
 	private function getAllStatesChildToRootByName(name:String):Array<IState> {
 		var states:Array<IState> = new Array<IState>();
-		while (hasStateByName(name)) {
-			var state:IState = getStateByName(name);
+		while (hasState(name)) {
+			var state:IState = getStateByUID(name);
 			states.push(state);
 			if (state.parentName == State.NO_PARENT) {
 				break;
@@ -289,6 +302,14 @@ class StateMachine implements IStateMachine {
 		return false;
 	}
 
+    /**
+	 * Gets a state by it's name
+	 * @param name of the state
+	 **/
+    private function getStateByUID(name:String):IState {
+        return hasState(name) ? _nameToStates.get(name) : UNKNOWN_STATE;
+    }
+
 	private function getAllFromsForStateByName(toState:String):Array<String> {
 		var froms:Array<String> = new Array<String>();
 		var states:Array<IState> = getAllStatesChildToRootByName(toState);
@@ -303,18 +324,38 @@ class StateMachine implements IStateMachine {
 	}
 
     private function getParentStateByName(name:String):IState {
-        if(!hasStateByName(name)){
+        if(!hasState(name)){
             return UNKNOWN_STATE;
         } else {
-            var stateName:IState=getStateByName(name);
+            var stateName:IState=getStateByUID(name);
             var parentName:String=stateName.parentName;
             if(parentName==State.NO_PARENT){
                 return NO_PARENT_STATE;
-            } else if(!hasStateByName(parentName)){
+            } else if(!hasState(parentName)){
                 return UNKNOWN_PARENT_STATE;
             } else {
-                return getStateByName(parentName);
+                return getStateByUID(parentName);
             }
         }
     }
+}
+
+private class NoopState implements IState {
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
+    public function new(uid:String) {
+        name = uid;
+    }
+
+    //----------------------------------
+    //  IState
+    //----------------------------------
+    public var name(default, null):String;
+    public var parentName(default, null):String;
+    public var froms(default, null):Array<String>;
+    public function enter(toState:String, fromState:String, currentState:String):Void {}
+    public function exit(fromState:String, toState:String, currentState:String = null):Void {}
 }

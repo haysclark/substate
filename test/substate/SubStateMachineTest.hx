@@ -6,12 +6,12 @@ import massive.munit.Assert;
 import mockatoo.Mockatoo.*;
 using mockatoo.Mockatoo;
 
-class StateMachineTest 
+class SubStateMachineTest
 {
     //----------------------------------
     //  vars
     //----------------------------------
-	private var _instance:StateMachine;
+	private var _instance:SubStateMachine;
 
     //--------------------------------------------------------------------------
     //
@@ -22,7 +22,7 @@ class StateMachineTest
 
     @Before
 	public function setup():Void {
-		_instance = new StateMachine();
+		_instance = new SubStateMachine();
 		_instance.init();
 	}
 	
@@ -40,21 +40,21 @@ class StateMachineTest
     public function test_UNINITIAL_STATE_IsExpectedValue():Void {
         var expected:String="uninitializedState";
 
-        Assert.areEqual(expected, StateMachine.UNINITIALIZED_STATE);
+        Assert.areEqual(expected, SubStateMachine.UNINITIALIZED_STATE);
     }
 
     @Test
-    public function testStateShouldBeInitializedTo_NO_STATE():Void {
-        var expected:String=StateMachine.UNINITIALIZED_STATE;
+    public function testCurrentStateShouldBeInitializedTo_NO_STATE():Void {
+        var expected:String=SubStateMachine.UNINITIALIZED_STATE;
 
-        Assert.areEqual(expected, _instance.state);
+        Assert.areEqual(expected, _instance.currentState);
     }
 
     @Test
     public function testHasStateByNameShouldReturnFalseForUnknownState():Void {
         var unknownStateName:String = "foo";
 
-        var result:Bool = _instance.hasStateByName(unknownStateName);
+        var result:Bool = _instance.hasState(unknownStateName);
 
         Assert.isFalse(result); //"expecting hasStateByName to return false for unknown state"
     }
@@ -65,18 +65,18 @@ class StateMachineTest
         var expectedKnownStateName:String=knownState.name;
         _instance.addState(createPlayingState());
 
-        var result:Bool=_instance.hasStateByName(expectedKnownStateName);
+        var result:Bool=_instance.hasState(expectedKnownStateName);
 
         Assert.isTrue(result); //"expecting hasStateByName to return true for known state"
     }
 
     @Test
     public function testAddStateShouldNotChangeCurrentState():Void {
-        var expected:String=StateMachine.UNINITIALIZED_STATE;
+        var expected:String=SubStateMachine.UNINITIALIZED_STATE;
 
         _instance.addState(createPlayingState());
 
-        Assert.areEqual(expected, _instance.state);
+        Assert.areEqual(expected, _instance.currentState);
     }
 
     @Test
@@ -98,10 +98,10 @@ class StateMachineTest
         var knownState:IState = mock(IState);
         knownState.name.returns("known");
         _instance.addState(knownState);
-        Assert.isTrue(_instance.getAllStateNames().length == 1);
+        Assert.isTrue(_instance.getAllStates().length == 1);
 
-        _instance.removeState(knownState);
-        Assert.isTrue(_instance.getAllStateNames().length == 0);
+        _instance.removeState(knownState.name);
+        Assert.isTrue(_instance.getAllStates().length == 0);
     }
 
     @Test
@@ -110,27 +110,24 @@ class StateMachineTest
         knownState.name.returns("known");
         _instance.addState(knownState);
 
-        var name = _instance.getAllStateNames()[0];
+        var name = _instance.getAllStates()[0];
 
         Assert.areEqual(name, knownState.name);
-        var state = _instance.getStateByName(name);
-        _instance.removeState(state);
-        Assert.isTrue(_instance.getAllStateNames().length == 0);
     }
 
     @Test
     public function testInitialStateShouldNoChangeForUnknownState():Void {
-        var expected:String=StateMachine.UNINITIALIZED_STATE;
+        var expected:String=SubStateMachine.UNINITIALIZED_STATE;
         var unknownState:String="foo";
 
         _instance.initialState=unknownState;
 
-        Assert.areEqual(expected, _instance.state);
+        Assert.areEqual(expected, _instance.currentState);
     }
 
     @Test
     public function testInitialStateShouldNotBeNull():Void {
-        Assert.isNotNull(_instance.state);
+        Assert.isNotNull(_instance.currentState);
     }
 
     @Test
@@ -141,7 +138,7 @@ class StateMachineTest
 
         _instance.initialState=expectedInitialStateName;
 
-        Assert.areEqual(expectedInitialStateName, _instance.state);
+        Assert.areEqual(expectedInitialStateName, _instance.currentState);
     }
 
     @Test
@@ -208,7 +205,7 @@ class StateMachineTest
     public function testCanChangeStateToShouldReturnFalseForUnknownState():Void {
         var unknownStateName:String = "foo";
 
-        var result:Bool = _instance.canChangeStateTo(unknownStateName);
+        var result:Bool = _instance.canTransition(unknownStateName);
 
          Assert.isFalse(result);
     }
@@ -220,7 +217,7 @@ class StateMachineTest
         _instance.initialState = initialState.name;
         var sameStateName:String = initialState.name;
 
-        var result:Bool = _instance.canChangeStateTo(sameStateName);
+        var result:Bool = _instance.canTransition(sameStateName);
 
          Assert.isFalse(result);
     }
@@ -233,7 +230,7 @@ class StateMachineTest
         var nextState:IState = createFromWildCardState();
         _instance.addState(nextState);
 
-        var result:Bool = _instance.canChangeStateTo(nextState.name);
+        var result:Bool = _instance.canTransition(nextState.name);
 
         Assert.isTrue(result);
     }
@@ -246,7 +243,7 @@ class StateMachineTest
         var nextState:IState=createPlayingState();
         _instance.addState(nextState);
 
-        var result:Bool=_instance.canChangeStateTo(nextState.name);
+        var result:Bool=_instance.canTransition(nextState.name);
 
         Assert.isTrue(result);
     }
@@ -255,7 +252,7 @@ class StateMachineTest
     public function testCanChangeStateToShouldTrueWhenParentStateIncludesDestinationState():Void {
         setupQuakeStateExample();
 
-        var result:Bool=_instance.canChangeStateTo("smash");
+        var result:Bool=_instance.canTransition("smash");
 
         Assert.isTrue(result);
     }
@@ -267,9 +264,9 @@ class StateMachineTest
         _instance.initialState=initialState.name;
         var unknowStateName:String="foo";
 
-        _instance.changeState(unknowStateName);
+        _instance.doTransition(unknowStateName);
 
-        Assert.areEqual(initialState.name, _instance.state);
+        Assert.areEqual(initialState.name, _instance.currentState);
     }
 
     @Test
@@ -281,9 +278,9 @@ class StateMachineTest
         _instance.addState(illegalState);
         var illegalStateName:String = illegalState.name;
 
-        _instance.changeState(illegalStateName);
+        _instance.doTransition(illegalStateName);
 
-        Assert.areEqual(initialState.name, _instance.state);
+        Assert.areEqual(initialState.name, _instance.currentState);
     }
 
     @Test
@@ -303,7 +300,7 @@ class StateMachineTest
         };
         mockObserver.transitionDenied(illegalState.name, initialState.name, cast any).calls(answer);
 
-        _instance.changeState(illegalStateName);
+        _instance.doTransition(illegalStateName);
 
         mockObserver.transitionDenied(illegalState.name, initialState.name, cast any).verify();
         Assert.isNotNull(allowedFromStatesResult);
@@ -321,7 +318,7 @@ class StateMachineTest
         _instance.addState(nextState);
         var nextStateName:String = nextState.name;
 
-        _instance.changeState(nextStateName);
+        _instance.doTransition(nextStateName);
 
         initialState.exit(cast any, cast any, cast any)
             .verify();
@@ -337,7 +334,7 @@ class StateMachineTest
         _instance.addState(nextState);
         var nextStateName:String = nextState.name;
 
-        _instance.changeState(nextStateName);
+        _instance.doTransition(nextStateName);
 
         initialState.exit(initialState.name, nextState.name, initialState.name)
             .verify();
@@ -347,11 +344,11 @@ class StateMachineTest
     public function testChangeStateShouldBeAbleToNavigateToAChildState():Void {
         setupQuakeStateExample();
 
-        Assert.areEqual("idle", _instance.state); // "not expected initial state"
-        _instance.changeState("smash");
-        Assert.areEqual("smash", _instance.state); // "not expected state after smash"
-        _instance.changeState("idle");
-        Assert.areEqual("idle", _instance.state); // "not expected state after return to idle"
+        Assert.areEqual("idle", _instance.currentState); // "not expected initial state"
+        _instance.doTransition("smash");
+        Assert.areEqual("smash", _instance.currentState); // "not expected state after smash"
+        _instance.doTransition("idle");
+        Assert.areEqual("idle", _instance.currentState); // "not expected state after return to idle"
     }
 
     @Test
@@ -369,15 +366,15 @@ class StateMachineTest
         _instance.addState(new State("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
         _instance.initialState="idle";
 
-        Assert.areEqual("idle", _instance.state); // "not expected initial state"
-        _instance.changeState("smash");
+        Assert.areEqual("idle", _instance.currentState); // "not expected initial state"
+        _instance.doTransition("smash");
 
         mockOnAttack.enter("smash", "idle", "attack").verify();
         mockOnMeleeAttack.enter("smash", "idle", "melee attack").verify();
         mockOnSmash.enter("smash", "idle", "smash").verify();
 
-        _instance.changeState("idle");
-        Assert.areEqual("idle", _instance.state); // "not expected state after return to idle",
+        _instance.doTransition("idle");
+        Assert.areEqual("idle", _instance.currentState); // "not expected state after return to idle",
     }
 
     @Test
@@ -393,23 +390,24 @@ class StateMachineTest
         _instance.addState(new State("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
         _instance.initialState="idle";
 
-        _instance.changeState("smash");
+        _instance.doTransition("smash");
         mockOnExitMeleeAttack.exit(cast any, cast any, cast any)
             .verify(never);
 
-        _instance.changeState("idle");
+        _instance.doTransition("idle");
         mockOnExitMeleeAttack.exit("smash", "idle", "melee attack")
             .verify();
     }
 
+    /**
     @Test
     public function testGetStateByNameShouldUseNullPattern():Void {
         var unknownStateName:String = "foo";
 
-        var result:IState = _instance.getStateByName(unknownStateName);
+        var result:IState = _instance.getStateByUID(unknownStateName);
 
         Assert.isNotNull(result);
-        Assert.areEqual(StateMachine.UNKNOWN_STATE, result);
+        Assert.areEqual(SubStateMachine.UNKNOWN_STATE, result);
     }
 
     @Test
@@ -418,12 +416,11 @@ class StateMachineTest
         _instance.addState(state);
         var knownStateName:String=state.name;
 
-        var result:IState=_instance.getStateByName(knownStateName);
+        var result:IState=_instance.getStateByUID(knownStateName);
 
         Assert.areEqual(state, result);
     }
 
-    /**
     @Test
     public function testFindPathShouldForBothUnknownStates():Void {
         var unknownStartName:String = "foo";

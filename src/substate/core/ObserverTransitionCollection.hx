@@ -1,4 +1,4 @@
-package substate;
+package substate.core;
 
 /**
  * A Collection class for IObserverTransitions which parrots
@@ -37,27 +37,20 @@ class ObserverTransitionCollection implements IObserverTransition
 	
 	public function unsubscribe(observer:IObserverTransition):Void {
         _observerTransitions.remove(observer);
-        // _observerTransitions.indexOf(observer)
-		//for (i in 0 ... _observerTransitions.length) {
-		//	if (observer != _observerTransitions[i]) {
-	//			continue;
-	//		}
-	//		_observerTransitions.splice(i, 1);
-	//	}
 	}
 	
 	//----------------------------------
 	//  IObserverTransition
 	//----------------------------------
 	public function transitionComplete(toState:String, fromState:String):Void {
-		for (i in 0 ... _observerTransitions.length) {
+		for (i in 0..._observerTransitions.length) {
 			var observer:IObserverTransition = _observerTransitions[i];
             observer.transitionComplete(toState, fromState);
 		}
     }
 
     public function transitionDenied(toState:String, fromState:String, allowedFromStates:Array<String>):Void {
-		for (i in 0 ... _observerTransitions.length) {
+        for (i in 0..._observerTransitions.length) {
 			var observer:IObserverTransition = _observerTransitions[i];
 			observer.transitionDenied(toState, fromState, allowedFromStates);
 		}
