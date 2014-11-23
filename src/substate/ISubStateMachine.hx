@@ -12,7 +12,7 @@ interface ISubStateMachine {
 	 * Removes a state by Unique ID
 	 * @param state Unique ID
 	 **/
-    function removeState(stateUID:String):Void;
+    function removeState(stateName:String):Void;
 
     /**
 	 * Removes all states.
@@ -22,7 +22,7 @@ interface ISubStateMachine {
     /**
 	 *	Return if a the state machine has a state with a specific Unique ID.
 	 */
-    function hasState(stateUID:String):Bool;
+    function hasState(stateName:String):Bool;
 
     /**
 	 * Gets all states Unique IDs
@@ -35,25 +35,25 @@ interface ISubStateMachine {
 	 *
 	 * @param stateName	The name of the State
 	 **/
-	function canTransition(stateUID:String):Bool;
+	function canTransition(stateName:String):Bool;
 
 	/**
 	 * Changes the current state
 	 * This will only be done if the Intended state allows the transition from the current state
 	 * Changing states will call the exit callback for the exiting state and enter callback for the entering state
-	 * @param stateTo	The name of the state to transition to
+	 * @param stateName	The name of the state to transition to
 	 **/
-	function doTransition(stateUID:String):Void;
+	function doTransition(stateName:String):Void;
 
     /**
 	 * Sets the first state, calls enter callback and dispatches TRANSITION_COMPLETE
 	 * These will only occour if no state is defined
-	 * @param stateUID	The Unique ID of the State
+	 * @param stateName	The Unique ID of the State
 	 **/
     var initialState(default, set):String;
 
     /**
-	 *	Gets the Unique ID of the current state
+	 *	Gets the name (UID) of the current state
 	 */
     var currentState(default, null):String;
 

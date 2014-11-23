@@ -70,9 +70,9 @@ class SubStateMachine implements ISubStateMachine {
 	 * Removes a state by Unique ID
 	 * @param state Unique ID
 	 **/
-    public function removeState(stateUID:String):Void {
-        _nameToStates.remove(stateUID);
-        if(currentState == stateUID) {
+    public function removeState(stateName:String):Void {
+        _nameToStates.remove(stateName);
+        if(currentState == stateName) {
             currentState = UNINITIALIZED_STATE;
         }
     }
@@ -91,8 +91,8 @@ class SubStateMachine implements ISubStateMachine {
 	 *
 	 * @param stateName	The name of the State
 	 **/
-    public function hasState(stateUID:String):Bool {
-        return _nameToStates.exists(stateUID);
+    public function hasState(stateName:String):Bool {
+        return _nameToStates.exists(stateName);
     }
 
     /**
@@ -123,44 +123,44 @@ class SubStateMachine implements ISubStateMachine {
 	 * Changes the current state
 	 * This will only be done if the Intended state allows the transition from the current state
 	 * Changing states will call the exit callback for the exiting state and enter callback for the entering state
-	 * @param stateUID	The name of the state to transition to
+	 * @param stateName	The name of the state to transition to
 	 **/
-    public function doTransition(stateUID:String):Void {
+    public function doTransition(stateName:String):Void {
         // If there is no state that matches stateTo
-        if (!hasState(stateUID)) {
+        if (!hasState(stateName)) {
             //trace("[StateMachine] Cannot make transition:State " + stateTo + " is not defined");
             return;
         }
 
         // If current state is not allowed to make this transition
-        if (!canTransition(stateUID)) {
+        if (!canTransition(stateName)) {
             //trace("[StateMachine] Transition to " + stateTo + " from " + state + " denied");
-            notifyTransitionDenied(currentState, stateUID, getAllFromsForStateByName(stateUID));
+            notifyTransitionDenied(currentState, stateName, getAllFromsForStateByName(stateName));
             return;
         }
 
         // call exit and enter callbacks(if they exits)
-        var path:Array<Int> = findPath(currentState, stateUID);
+        var path:Array<Int> = findPath(currentState, stateName);
         if (path[0] > 0) { // hasFroms
             //trace("[StateMachine] hasFroms");
-            executeExitForStack(currentState, stateUID, path[0]);
+            executeExitForStack(currentState, stateName, path[0]);
         }
 
         var oldState:String = currentState;
-        currentState = stateUID;
+        currentState = stateName;
         if (path[1] > 0) { // hasTos
             //trace("[StateMachine] hasTos");
-            executeEnterForStack(stateUID, oldState);
+            executeEnterForStack(stateName, oldState);
         }
 
         //trace("[StateMachine] State Changed to " + state);
-        notifyTransitionComplete(stateUID, oldState);
+        notifyTransitionComplete(stateName, oldState);
     }
     
     /**
 	 * Sets the first state, calls enter callback and dispatches TRANSITION_COMPLETE
 	 * These will only occour if no state is defined
-	 * @param stateUID	The Unique ID of the State
+	 * @param stateName	The UID of the State
 	 **/
     public var initialState(default, set):String;
     private function set_initialState(stateName:String):String {

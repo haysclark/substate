@@ -2,14 +2,15 @@ package substate;
 
 interface IState extends IEnter extends IExit
 {
-	/** the ID of the State **/
+	/** the state's UID **/
     var name(default, null):String;
 
-	/** the parent States ID(optional)**/
+	/** the parent state's UID (optional) **/
     var parentName(default, null):String;
 
-    /** the States which can transition to this State
-	 * will default to *(WILDCARD)is not set
+    /**
+     * the state UIDs which can transition to this state
+	 * defaults to None.  Use WILDCARD to allow all states
 	 **/
     var froms(default, null):Array<String>;
 }
