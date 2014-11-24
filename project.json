@@ -3,7 +3,7 @@
 	{
 		"name": "Substate",
 		"description": "A simple and hierarchical finite state machine",
-		"version": "0.1.1",
+		"version": "0.2.0",
 		"id": "substate",
 		"devDependencies": 
 		{

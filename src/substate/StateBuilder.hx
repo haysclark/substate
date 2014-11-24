@@ -1,20 +1,14 @@
 package substate;
 
-import String;
+import substate.SubStateMachine;
+import substate.SubStateMachine;
 
 class StateBuilder {
+    //----------------------------------
+    //  CONSTS
+    //----------------------------------
     private static var NO_ENTER:IEnter = new NoopEnter();
     private static var NO_EXIT:IExit = new NoopExit();
-
-    public function new() {}
-}
-
-private class State implements IState {
-    //----------------------------------
-    //  vars
-    //----------------------------------
-    private var _onEnter:IEnter;
-    private var _onExit:IExit;
 
     //--------------------------------------------------------------------------
     //
@@ -29,44 +23,22 @@ private class State implements IState {
     //
     //--------------------------------------------------------------------------
     public function build(stateName:String, params:Dynamic = null):IState {
-        var state = new State(stateName);
-        name = stateName;
         if (params == null ){
             params = {};
         }
-        parentName = Reflect.hasField(params, "parent") ? cast Reflect.getProperty(params, "parent") : NO_PARENT;
-        froms = getFroms(params);
-        _onEnter = Reflect.hasField(params, "enter") ? cast Reflect.getProperty(params, "enter") : NO_ENTER;
-        _onExit = Reflect.hasField(params, "exit") ? cast Reflect.getProperty(params, "exit") : NO_EXIT;
-    }
 
-    //--------------------------------------------------------------------------
-    //
-    //  PUBLIC METHODS
-    //
-    //--------------------------------------------------------------------------
-    //----------------------------------
-    //  IState
-    //----------------------------------
-    public var name(default, null):String;
+        var parentName = Reflect.hasField(params, "parent") ? cast Reflect.getProperty(params, "parent") : SubStateMachine.NO_PARENT;
+        var froms = getFroms(params);
+        var onEnter = Reflect.hasField(params, "enter") ? cast Reflect.getProperty(params, "enter") : NO_ENTER;
+        var onExit = Reflect.hasField(params, "exit") ? cast Reflect.getProperty(params, "exit") : NO_EXIT;
 
-    /**
-     * the parent States ID(optional)
-     **/
-    public var parentName(default, null):String;
-
-    /**
-     * the States which can transition to this State
-	 * will default to *(WILDCARD)is not set
-	 **/
-    public var froms(default, null):Array<String>;
-
-    public function enter(toState:String, fromState:String, currentState:String):Void {
-        _onEnter.enter(toState, fromState, currentState);
-    }
-
-    public function exit(fromState:String, toState:String, currentState:String = null):Void {
-        _onExit.exit(fromState, toState, currentState);
+        return new BuiltState(
+            stateName,
+            parentName,
+            froms,
+            onEnter,
+            onExit
+        );
     }
 
     //--------------------------------------------------------------------------
@@ -76,9 +48,7 @@ private class State implements IState {
     //--------------------------------------------------------------------------
     private function getFroms(data:Dynamic):Array<String> {
         var froms:Array<String> = new Array<String>();
-        if(!Reflect.hasField(data, "from")) {
-            froms.push(WILDCARD);
-        } else {
+        if(Reflect.hasField(data, "from")) {
             var fromData:String = cast Reflect.getProperty(data, "from");
             froms = Std.string(fromData).split(",");
         }
@@ -86,14 +56,24 @@ private class State implements IState {
     }
 }
 
-private class State implements IState {
+private class BuiltState implements IState {
+    //----------------------------------
+    //  vars
+    //----------------------------------
+    private var _onEnter:IEnter;
+    private var _onExit:IExit;
+
     //--------------------------------------------------------------------------
     //
     //  CONSTRUCTOR
     //
     //--------------------------------------------------------------------------
-    public function new(uid:String) {
-        name = uid;
+    public function new(stateName:String, stateParentName:String, stateFroms:Array<String>, enter:IEnter, exit:IExit) {
+        name = stateName;
+        parentName = stateParentName;
+        froms = stateFroms;
+        _onEnter = enter;
+        _onExit = exit;
     }
 
     //----------------------------------
@@ -102,12 +82,21 @@ private class State implements IState {
     public var name(default, null):String;
     public var parentName(default, null):String;
     public var froms(default, null):Array<String>;
-    public function enter(toState:String, fromState:String, currentState:String):Void {}
-    public function exit(fromState:String, toState:String, currentState:String = null):Void {}
+
+    public function enter(toState:String, fromState:String, currentState:String):Void {
+        _onEnter.enter(toState, fromState, currentState);
+    }
+    public function exit(fromState:String, toState:String, currentState:String = null):Void {
+        _onExit.exit(fromState, toState, currentState);
+    }
 }
 
 private class NoopEnter implements IEnter {
-
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
     public function new() {}
 
     //--------------------------------------------------------------------------
@@ -124,7 +113,11 @@ private class NoopEnter implements IEnter {
 }
 
 private class NoopExit implements IExit {
-
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
     public function new() {}
 
     //--------------------------------------------------------------------------

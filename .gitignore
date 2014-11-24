@@ -22,7 +22,5 @@ test/TestSuite.hx
 
 # Project files
 .idea/
-#*.iml
+*.iml
 *.iws
-
-# Project files

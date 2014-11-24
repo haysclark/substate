@@ -7,14 +7,16 @@ class SubStateMachine implements ISubStateMachine {
 	//----------------------------------
 	//  CONSTS
 	//----------------------------------
-	public static inline var UNINITIALIZED_STATE:String = "uninitializedState";
-    public static inline var WILDCARD:String= "*";
-    public static inline var NO_PARENT:String = null;
+    public static inline var UNINITIALIZED_STATE:String = "uninitializedState";
 
-	// NOOPs
-	private static var UNKNOWN_STATE:IState = new NoopState("unknown.state");
+    // NOOPs
+    private static var UNKNOWN_STATE:IState = new NoopState("unknown.state");
     private static var UNKNOWN_PARENT_STATE:IState = new NoopState("unknown.parent.state");
     private static var NO_PARENT_STATE:IState = new NoopState("no.parent.state");
+
+    // Expected IState Constants
+    public static inline var WILDCARD:String = "*";
+    public static inline var NO_PARENT:String = "";
 
     //----------------------------------
 	//  vars
@@ -39,7 +41,6 @@ class SubStateMachine implements ISubStateMachine {
 	//--------------------------------------------------------------------------
 	public function init():Void {
         currentState = UNINITIALIZED_STATE;
-
         _nameToStates = new StringMap<IState>();
 	 	_observerCollection = new ObserverTransitionCollection();
 	 	_observerCollection.init();
@@ -285,7 +286,7 @@ class SubStateMachine implements ISubStateMachine {
 		while (hasState(name)) {
 			var state:IState = getStateByUID(name);
 			states.push(state);
-			if (state.parentName == StateBuilder.NO_PARENT) {
+			if (state.parentName == NO_PARENT) {
 				break;
 			}
 			name = state.parentName;
@@ -328,9 +329,9 @@ class SubStateMachine implements ISubStateMachine {
         if(!hasState(name)){
             return UNKNOWN_STATE;
         } else {
-            var stateName:IState=getStateByUID(name);
-            var parentName:String=stateName.parentName;
-            if(parentName==StateBuilder.NO_PARENT){
+            var stateName:IState = getStateByUID(name);
+            var parentName:String = stateName.parentName;
+            if(parentName == NO_PARENT){
                 return NO_PARENT_STATE;
             } else if(!hasState(parentName)){
                 return UNKNOWN_PARENT_STATE;

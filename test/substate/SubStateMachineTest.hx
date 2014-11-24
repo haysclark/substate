@@ -28,6 +28,7 @@ class SubStateMachineTest
 	
 	@After
 	public function tearDown():Void {
+        _instance.destroy;
 		_instance = null;
 	}
 
@@ -38,14 +39,14 @@ class SubStateMachineTest
     //--------------------------------------------------------------------------
     @Test
     public function test_UNINITIAL_STATE_IsExpectedValue():Void {
-        var expected:String="uninitializedState";
+        var expected:String = "uninitializedState";
 
         Assert.areEqual(expected, SubStateMachine.UNINITIALIZED_STATE);
     }
 
     @Test
     public function testAddStateShouldNotChangeCurrentState():Void {
-        var expected:String=SubStateMachine.UNINITIALIZED_STATE;
+        var expected:String = SubStateMachine.UNINITIALIZED_STATE;
 
         _instance.addState(createPlayingState());
 
@@ -54,10 +55,11 @@ class SubStateMachineTest
 
     @Test
     public function testAddStateShouldTakeIStateArgument():Void {
-        var knownState:IState = mock(IState);
+    var knownState:IState = mock(IState);
+    knownState.name.returns("foo");
 
-        _instance.addState(knownState);
-    }
+    _instance.addState(knownState);
+}
 
     @Test
     public function testAddStateShouldBeCallableMultipleTimes():Void {
@@ -70,6 +72,7 @@ class SubStateMachineTest
     public function testRemoveStateShouldRemoveState():Void {
         var knownState:IState = mock(IState);
         knownState.name.returns("known");
+        knownState.parentName.returns(SubStateMachine.NO_PARENT);
         _instance.addState(knownState);
         Assert.isTrue(_instance.getAllStates().length == 1);
 
@@ -81,6 +84,7 @@ class SubStateMachineTest
     public function testRemoveStateShouldResetInitialState():Void {
         var knownState:IState = mock(IState);
         knownState.name.returns("known");
+        knownState.parentName.returns(SubStateMachine.NO_PARENT);
         _instance.addState(knownState);
         _instance.initialState = "known";
         Assert.areEqual("known", _instance.currentState);
@@ -95,6 +99,7 @@ class SubStateMachineTest
         for (i in 0...count) {
             var randState:IState = mock(IState);
             randState.name.returns(Std.string(i));
+            randState.parentName.returns(SubStateMachine.NO_PARENT);
             _instance.addState(randState);
         }
         Assert.isTrue(_instance.getAllStates().length == count);
@@ -109,6 +114,7 @@ class SubStateMachineTest
         for (i in 0...count) {
             var randState:IState = mock(IState);
             randState.name.returns(Std.string(i));
+            randState.parentName.returns(SubStateMachine.NO_PARENT);
             _instance.addState(randState);
         }
         _instance.initialState = "1";
@@ -266,6 +272,7 @@ class SubStateMachineTest
     public function testDoTransitionShouldCallFromStatesExitHandler():Void {
         var initialState = mock(IState);
         initialState.name.returns("first");
+        initialState.parentName.returns(SubStateMachine.NO_PARENT);
         _instance.addState(initialState);
         _instance.initialState = initialState.name;
         var nextState = createSecondState();
@@ -282,6 +289,7 @@ class SubStateMachineTest
     public function testDoTransitionShouldCallFromStatesExitHandlerWithExpectedPayload():Void {
         var initialState = mock(IState);
         initialState.name.returns("first");
+        initialState.parentName.returns(SubStateMachine.NO_PARENT);
         _instance.addState(initialState);
         _instance.initialState = initialState.name;
         var nextState = createSecondState();
@@ -311,13 +319,13 @@ class SubStateMachineTest
         var mockOnMeleeAttack = mock(IEnter);
         var mockOnSmash = mock(IEnter);
 
-        _instance.addState(new StateBuilder("idle", { enter: mock(IEnter), from: "attack" }));
-        _instance.addState(new StateBuilder("attack", { enter: mockOnAttack, from: "idle" }));
-        _instance.addState(new StateBuilder("melee attack", { parent: "attack", enter: mockOnMeleeAttack, exit: mock(IExit), from: "attack" }));
-        _instance.addState(new StateBuilder("smash", { parent: "melee attack", enter: mockOnSmash }));
-        _instance.addState(new StateBuilder("punch", { parent: "melee attack", enter: mock(IEnter) }));
-        _instance.addState(new StateBuilder("missle attack", { parent: "attack", enter: mock(IEnter) }));
-        _instance.addState(new StateBuilder("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
+        _instance.addState(new StateBuilder().build("idle", { enter: mock(IEnter), from: "attack" }));
+        _instance.addState(new StateBuilder().build("attack", { enter: mockOnAttack, from: "idle" }));
+        _instance.addState(new StateBuilder().build("melee attack", { parent: "attack", enter: mockOnMeleeAttack, exit: mock(IExit), from: "attack" }));
+        _instance.addState(new StateBuilder().build("smash", { parent: "melee attack", enter: mockOnSmash }));
+        _instance.addState(new StateBuilder().build("punch", { parent: "melee attack", enter: mock(IEnter) }));
+        _instance.addState(new StateBuilder().build("missle attack", { parent: "attack", enter: mock(IEnter) }));
+        _instance.addState(new StateBuilder().build("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
         _instance.initialState="idle";
 
         Assert.areEqual("idle", _instance.currentState); // "not expected initial state"
@@ -335,13 +343,13 @@ class SubStateMachineTest
     public function testDoTransitionShouldCallExitStatesForParentsStates():Void {
         var mockOnExitMeleeAttack = mock(IExit);
 
-        _instance.addState(new StateBuilder("idle", { enter: mock(IEnter), from: "attack" }));
-        _instance.addState(new StateBuilder("attack", { enter: mock(IEnter), from: "idle" }));
-        _instance.addState(new StateBuilder("melee attack", { parent: "attack", enter: mock(IEnter), exit: mockOnExitMeleeAttack, from: "attack" }));
-        _instance.addState(new StateBuilder("smash", { parent: "melee attack", enter: mock(IEnter) }));
-        _instance.addState(new StateBuilder("punch", { parent: "melee attack", enter: mock(IEnter) }));
-        _instance.addState(new StateBuilder("missle attack", { parent: "attack", enter: mock(IEnter) }));
-        _instance.addState(new StateBuilder("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
+        _instance.addState(new StateBuilder().build("idle", { enter: mock(IEnter), from: "attack" }));
+        _instance.addState(new StateBuilder().build("attack", { enter: mock(IEnter), from: "idle" }));
+        _instance.addState(new StateBuilder().build("melee attack", { parent: "attack", enter: mock(IEnter), exit: mockOnExitMeleeAttack, from: "attack" }));
+        _instance.addState(new StateBuilder().build("smash", { parent: "melee attack", enter: mock(IEnter) }));
+        _instance.addState(new StateBuilder().build("punch", { parent: "melee attack", enter: mock(IEnter) }));
+        _instance.addState(new StateBuilder().build("missle attack", { parent: "attack", enter: mock(IEnter) }));
+        _instance.addState(new StateBuilder().build("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
         _instance.initialState="idle";
 
         _instance.doTransition("smash");
@@ -380,22 +388,14 @@ class SubStateMachineTest
     }
 
     @Test
-    public function testIStateMock():Void {
-        var mockmock = mock(IEnter);
-        mockmock.enter("a", "b", "c");
-
-        mockmock.enter(cast anyString, cast anyString, cast anyString).verify();
-    }
-
-    @Test
     public function testInitialStateShouldCallEnterCallbackOfNewState():Void {
         var mockmock = mock(IEnter);
-        var initialState:IState = new StateBuilder(
-        "stopped",
-        {
-        enter: mockmock,
-        from: "*"
-        }
+        var initialState:IState = new StateBuilder().build(
+            "stopped",
+            {
+            enter: mockmock,
+            from: "*"
+            }
         );
         _instance.addState(initialState);
         _instance.initialState = initialState.name;
@@ -407,6 +407,7 @@ class SubStateMachineTest
     public function testInitialStateShouldCallEnterCallbackWithExpectedArguments():Void {
         var mockState =  mock(IState);
         mockState.name.returns("foo");
+        mockState.parentName.returns(SubStateMachine.NO_PARENT);
         _instance.addState(mockState);
 
         _instance.initialState = mockState.name;
@@ -428,7 +429,6 @@ class SubStateMachineTest
         .verify();
     }
 
-
     @Test
     public function testInitialStateShouldUseNullPatternWhenCallingEnterCallbackOfNewState():Void {
         var initialState:IState = createNullPatternTestState();
@@ -447,6 +447,8 @@ class SubStateMachineTest
     }
 
     /**
+    * TDD Test which might be of value for refactoring but are now private vars.
+    *
     @Test
     public function testGetStateByNameShouldUseNullPattern():Void {
         var unknownStateName:String = "foo";
@@ -600,96 +602,105 @@ class SubStateMachineTest
         Assert.areEqual(StateMachine.NO_PARENT_STATE, result);
     }
     **/
+
     //--------------------------------------------------------------------------
     //
     //  PRIVATE METHODS
     //
     //--------------------------------------------------------------------------
     private function createPlayingState():IState {
-        return new StateBuilder(
-            "playing",
-            {
-                enter: mock(IEnter),
-                exit: mock(IExit),
-                from: "paused,stopped"
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "playing",
+                {
+                    enter: mock(IEnter),
+                    exit: mock(IExit),
+                    from: "paused,stopped"
+                }
+            );
     }
 
     private function createPausedState():IState {
-        return new StateBuilder(
-            "paused",
-            {
-                enter: mock(IEnter),
-                from: "playing"
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "paused",
+                {
+                    enter: mock(IEnter),
+                    from: "playing"
+                }
+            );
     }
 
     private function createStoppedState():IState {
-        return new StateBuilder(
-            "stopped",
-            {
-                enter: mock(IEnter),
-                from: "*"
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "stopped",
+                {
+                    enter: mock(IEnter),
+                    from: "*"
+                }
+            );
     }
 
     private function createFirstState():IState {
-        return new StateBuilder(
-            "first",
-            {
-                enter: mock(IEnter),
-                exit: mock(IExit),
-                from: "second"
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "first",
+                {
+                    enter: mock(IEnter),
+                    exit: mock(IExit),
+                    from: "second"
+                }
+            );
     }
 
     private function createSecondState():IState {
-        return new StateBuilder(
-            "second",
-            {
-                enter: mock(IEnter),
-                exit: mock(IExit),
-                from: "first"
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "second",
+                {
+                    enter: mock(IEnter),
+                    exit: mock(IExit),
+                    from: "first"
+                }
+            );
     }
 
     private function createParentState():IState {
-        return new StateBuilder(
-            "parent",
-            {
-                enter: mock(IEnter),
-                exit: mock(IExit)
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "parent",
+                {
+                    enter: mock(IEnter),
+                    exit: mock(IExit)
+                }
+            );
     }
 
     private function createChildState():IState {
-        return new StateBuilder(
-            "child",
-            {
-                parent: "parent",
-                enter: mock(IEnter),
-                exit: mock(IExit),
-                from: "first"
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "child",
+                {
+                    parent: "parent",
+                    enter: mock(IEnter),
+                    exit: mock(IExit),
+                    from: "first"
+                }
+            );
     }
 
     private function createGrandChildState():IState {
-        return new StateBuilder(
-            "grandChild",
-            {
-                parent:"child",
-                enter: mock(IEnter),
-                exit: mock(IExit),
-                from: "first"
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "grandChild",
+                {
+                    parent:"child",
+                    enter: mock(IEnter),
+                    exit: mock(IExit),
+                    from: "first"
+                }
+            );
     }
 
     /**
@@ -700,13 +711,13 @@ class SubStateMachineTest
     private function setupQuakeStateExample():StringMap<IState> {
         // Create Map for looking up states by name
         var stateMap = new StringMap<IState>();
-        stateMap.set("idle", new StateBuilder("idle", { enter: mock(IEnter), from: "attack" }));
-        stateMap.set("attack", new StateBuilder("attack", { enter: mock(IEnter), from: "idle" }));
-        stateMap.set("melee attack", new StateBuilder("melee attack", { parent: "attack", enter: mock(IEnter), exit: mock(IExit), from: "attack" }));
-        stateMap.set("smash", new StateBuilder("smash", { parent: "melee attack", enter: mock(IEnter) }));
-        stateMap.set("punch", new StateBuilder("punch", { parent: "melee attack", enter: mock(IEnter) }));
-        stateMap.set("missle attack", new StateBuilder("missle attack", { parent: "attack", enter: mock(IEnter) }));
-        stateMap.set("die", new StateBuilder("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
+        stateMap.set("idle", new StateBuilder().build("idle", { enter: mock(IEnter), from: "attack" }));
+        stateMap.set("attack", new StateBuilder().build("attack", { enter: mock(IEnter), from: "idle" }));
+        stateMap.set("melee attack", new StateBuilder().build("melee attack", { parent: "attack", enter: mock(IEnter), exit: mock(IExit), from: "attack" }));
+        stateMap.set("smash", new StateBuilder().build("smash", { parent: "melee attack", enter: mock(IEnter) }));
+        stateMap.set("punch", new StateBuilder().build("punch", { parent: "melee attack", enter: mock(IEnter) }));
+        stateMap.set("missle attack", new StateBuilder().build("missle attack", { parent: "attack", enter: mock(IEnter) }));
+        stateMap.set("die", new StateBuilder().build("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
 
         //Add States
         for (state in stateMap) {
@@ -718,18 +729,20 @@ class SubStateMachineTest
     }
 
     private function createNullPatternTestState():IState {
-        return new StateBuilder(
-            "nullPatternTest",
-            {}
-        );
+        return new StateBuilder()
+            .build(
+                "nullPatternTest",
+                {}
+            );
     }
 
     private function createFromWildCardState():IState {
-        return new StateBuilder(
-            "fromWildCardTest",
-            {
-                from: State.WILDCARD
-            }
-        );
+        return new StateBuilder()
+            .build(
+                "fromWildCardTest",
+                {
+                    from: SubStateMachine.WILDCARD
+                }
+            );
     }
 }
