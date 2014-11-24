@@ -1,14 +1,14 @@
 {
 	"name": "substate",
 	"license": "MIT",
-	"tags": [],
-	"description": "Substate is a hierarchical finite state machine Haxe library.",
+    "tags": ["cross","state","statemachine","fsm","infinitedescent"],
+	"description": "Substate is a hierarchical finite state machine library.",
 	"contributors": [
         "haysclark"
     ],
-    "releasenote": "See https://github.com/haysclark/substate/blob/master/CHANGES.md",
-    "version": "0.1.1",
-    "url": "http://github.com/haysclark/substate",
+    "releasenote": "See https://github.com/infinitedescent/substate/blob/master/CHANGES.md",
+    "version": "0.9.0",
+    "url": "http://github.com/infinitedescent/substate",
 	"dependencies": {
     }
 }
