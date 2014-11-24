@@ -3,7 +3,7 @@
 	{
 		"name": "Substate",
 		"description": "A simple and hierarchical finite state machine",
-		"version": "0.2.0",
+		"version": "0.9.0",
 		"id": "substate",
 		"devDependencies": 
 		{
@@ -17,6 +17,6 @@
 	},
 	"haxelib": 
 	{
-		"user": "haysclark"
+		"user": "infinitedescent"
 	}
 }
