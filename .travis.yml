@@ -24,6 +24,5 @@ install:
 
 script:
   - haxelib run munit test -as3 -norun
-  - haxelib run munit test -browser phantomjs
+  - haxelib run munit test -js -norun
   - haxelib run munit test -cpp -neko
-  
