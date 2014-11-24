@@ -23,12 +23,7 @@ install:
   - haxelib install mockatoo
 
 script:
-  - haxelib run lime test neko
-  - haxelib run lime test neko -Dnext
   - haxelib run munit test -as3 -norun
   - haxelib run munit test -browser phantomjs
-  - haxelib run lime test linux
-  - haxelib run lime test linux -Dnext
-
-notifications:
-  slack: openfl:sBwVO0kgB7EuWLYzZzUezVIz
+  - haxelib run munit test -cpp -neko
+  
