@@ -39,6 +39,7 @@
 
 package substate;
 
+import substate.core.ObserverTransitionCollection;
 import haxe.ds.StringMap;
 import massive.munit.Assert;
 
@@ -321,7 +322,7 @@ class SubStateMachineTest
         _instance.doTransition(nextStateName);
 
         initialState.exit(cast any, cast any, cast any)
-        .verify();
+            .verify();
     }
 
     @Test
@@ -338,7 +339,7 @@ class SubStateMachineTest
         _instance.doTransition(nextStateName);
 
         initialState.exit(initialState.name, nextState.name, initialState.name)
-        .verify();
+            .verify();
     }
 
     @Test
@@ -393,11 +394,40 @@ class SubStateMachineTest
 
         _instance.doTransition("smash");
         mockOnExitMeleeAttack.exit(cast any, cast any, cast any)
-        .verify(never);
+            .verify(never);
 
         _instance.doTransition("idle");
         mockOnExitMeleeAttack.exit("smash", "idle", "melee attack")
-        .verify();
+            .verify();
+    }
+
+    @Test
+    public function testDoTransitionShouldDispatchNotificationInCorrectOrderWhenStatesTransitionsAreChainedInEnter():Void {
+        _instance.addState(new StateBuilder().build("start"));
+        _instance.addState(createChainState(_instance, StateA));
+        _instance.addState(createChainState(_instance, StateB));
+        _instance.addState(createChainState(_instance, StateC));
+        _instance.initialState = "start";
+        var collector = new ObserverTransitionCollector();
+        _instance.subscribe(collector);
+
+        _instance.doTransition(StateA.ID);
+
+        var toState:Int = 0;
+        var fromState:Int = 1;
+        Assert.areEqual(3, collector.completeCount());
+        Assert.areEqual("state.a", collector.completeCalls[0][toState]);
+        Assert.areEqual("start", collector.completeCalls[0][fromState]);
+        Assert.areEqual("state.b", collector.completeCalls[1][toState]);
+        Assert.areEqual("state.a", collector.completeCalls[1][fromState]);
+        Assert.areEqual("state.c", collector.completeCalls[2][toState]);
+        Assert.areEqual("state.b", collector.completeCalls[2][fromState]);
+    }
+
+    private function createChainState(stateMachine:ISubStateMachine, StateClazz:Class <IHazSubStateMachine>):IState {
+        var state:IHazSubStateMachine = Type.createInstance (StateClazz, []);
+        state.setStateMachine(stateMachine);
+        return state;
     }
 
     @Test
@@ -452,7 +482,7 @@ class SubStateMachineTest
         _instance.initialState = mockState.name;
 
         mockState.enter(mockState.name, cast any, cast anyString)
-        .verify();
+            .verify();
     }
 
     @Test
@@ -465,7 +495,7 @@ class SubStateMachineTest
         _instance.initialState = initialState.name;
 
         mockObserver.transitionComplete(initialState.name, null)
-        .verify();
+            .verify();
     }
 
     @Test
@@ -783,5 +813,162 @@ class SubStateMachineTest
                     from: SubStateMachine.WILDCARD
                 }
             );
+    }
+}
+
+/**
+ * A State with a reference to it's state machine.
+ **/
+interface IHazSubStateMachine extends IState {
+    function setStateMachine(stateMachine:ISubStateMachine):Void;
+}
+
+/**
+ *
+ **/
+class AbstractTestState implements IHazSubStateMachine {
+    //----------------------------------
+    //  vars
+    //----------------------------------
+    private var _stateMachine:ISubStateMachine;
+
+    public function new() {
+        parentName = SubStateMachine.NO_PARENT;
+    }
+
+    //----------------------------------
+    //  IHazSubStateMachine
+    //----------------------------------
+    public function setStateMachine(stateMachine:ISubStateMachine):Void {
+        _stateMachine = stateMachine;
+    }
+
+    //----------------------------------
+    //  IState
+    //----------------------------------
+    public var name(default, null):String;
+    public var parentName(default, null):String;
+    public var froms(default, null):Array<String>;
+    public function enter(toState:String, fromState:String, currentState:String):Void {
+        //
+    }
+
+    public function exit(fromState:String, toState:String, currentState:String = null):Void {
+        //
+    }
+}
+
+/**
+ * State A
+ **/
+class StateA extends AbstractTestState {
+    //----------------------------------
+    //  CONSTS
+    //----------------------------------
+    public static inline var ID:String = "state.a";
+
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
+    public function new() {
+        super();
+        name = ID;
+        froms = ["*"];
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    //  PUBLIC METHODS
+    //
+    //--------------------------------------------------------------------------
+    public override function enter(toState:String, fromState:String, currentState:String):Void {
+        _stateMachine.doTransition(StateB.ID);
+    }
+}
+
+/**
+ * State B
+ **/
+class StateB extends AbstractTestState {
+    //----------------------------------
+    //  CONSTS
+    //----------------------------------
+    public static inline var ID:String = "state.b";
+
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
+    public function new() {
+        super();
+        name = ID;
+        froms = ["*"];
+    }
+
+    //--------------------------------------------------------------------------
+    //
+    //  PUBLIC METHODS
+    //
+    //--------------------------------------------------------------------------
+    public override function enter(toState:String, fromState:String, currentState:String):Void {
+        _stateMachine.doTransition(StateC.ID);
+    }
+}
+
+/**
+ * State C
+ **/
+class StateC extends AbstractTestState {
+    //----------------------------------
+    //  CONSTS
+    //----------------------------------
+    public static inline var ID:String = "state.c";
+
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
+    public function new() {
+        super();
+        name = ID;
+        froms = ["*"];
+    }
+}
+
+class ObserverTransitionCollector implements IObserverTransition {
+    //----------------------------------
+    //  vars
+    //----------------------------------
+    public var completeCalls:Array<Array<String>>;
+    public var deniedCalls:Array<Array<Dynamic>>;
+
+    //--------------------------------------------------------------------------
+    //
+    //  CONSTRUCTOR
+    //
+    //--------------------------------------------------------------------------
+    public function new() {
+        completeCalls = new Array<Array<String>>();
+        deniedCalls = new Array<Array<Dynamic>>();
+    }
+
+    public function transitionComplete(toState:String, fromState:String):Void {
+        completeCalls.push([toState, fromState]);
+    }
+
+    public function completeCount():Int {
+        return completeCalls.length;
+    }
+
+    public function transitionDenied(toState:String, fromState:String, allowedFromStates:Array<String>):Void {
+       deniedCalls.push([toState, fromState, allowedFromStates]);
+    }
+
+    public function deniedCount():Int {
+        return deniedCalls.length;
     }
 }

@@ -5,8 +5,7 @@
 	"description": "Substate is a hierarchical finite state machine library.",
 	"contributors": ["infinitedescent"],
     "releasenote": "See <a href=\"https://github.com/infinitedescent/substate/blob/master/CHANGES.md\">Changelist</a>",
-    "version": "0.9.1",
+    "version": "0.9.2",
     "url": "http://github.com/infinitedescent/substate",
-	"dependencies": {
-    }
+	"dependencies": {}
 }

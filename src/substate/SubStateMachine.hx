@@ -63,6 +63,9 @@ class SubStateMachine implements ISubStateMachine {
 	/* @private */
 	private var _nameToStates:StringMap<IState>;
 
+    /* @private */
+    private var _notificationCache:Array<Array<String>>;
+
 	/* @private */
 	private var _observerCollection:ObserverTransitionCollection;
 
@@ -81,6 +84,7 @@ class SubStateMachine implements ISubStateMachine {
 	public function init():Void {
         currentState = UNINITIALIZED_STATE;
         _nameToStates = new StringMap<IState>();
+        _notificationCache = new Array<Array<String>>();
 	 	_observerCollection = new ObserverTransitionCollection();
 	 	_observerCollection.init();
 	}
@@ -176,7 +180,7 @@ class SubStateMachine implements ISubStateMachine {
 
         // If current state is not allowed to make this transition
         if (!canTransition(stateName)) {
-            //trace("[StateMachine] Transition to " + stateTo + " from " + state + " denied");
+            //trace("[StateMachine] Transition to " + stateName + " from " + currentState + " denied");
             notifyTransitionDenied(currentState, stateName, getAllFromsForStateByName(stateName));
             return;
         }
@@ -188,17 +192,17 @@ class SubStateMachine implements ISubStateMachine {
             executeExitForStack(currentState, stateName, path[0]);
         }
 
+        dumpNotificationCache();
         var oldState:String = currentState;
         currentState = stateName;
         if (path[1] > 0) { // hasTos
             //trace("[StateMachine] hasTos");
+            _notificationCache.push([stateName, oldState]);
             executeEnterForStack(stateName, oldState);
         }
-
-        //trace("[StateMachine] State Changed to " + state);
-        notifyTransitionComplete(stateName, oldState);
+        dumpNotificationCache();
     }
-    
+
     /**
 	 * Sets the first state, calls enter callback and dispatches TRANSITION_COMPLETE
 	 * These will only occour if no state is defined
@@ -259,6 +263,13 @@ class SubStateMachine implements ISubStateMachine {
         for (i in 0 ... n - 1) {
             parentState = getParentStateByName(parentState.name); // parentState.parent;
             parentState.exit(state, stateTo, parentState.name);
+        }
+    }
+
+    private function dumpNotificationCache():Void {
+        while(_notificationCache.length > 0) {
+            var array:Array<String> = _notificationCache.shift();
+            notifyTransitionComplete(array[0], array[1]);
         }
     }
 
