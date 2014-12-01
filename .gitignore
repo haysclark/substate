@@ -14,6 +14,7 @@ TestSuite.hx
 build/
 
 # Test and Report Folders
+out/
 report/
 test/TestMain.hx
 test/TestSuite.hx
