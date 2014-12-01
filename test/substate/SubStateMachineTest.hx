@@ -77,7 +77,7 @@ class SubStateMachineTest
     //  TESTS
     //
     //--------------------------------------------------------------------------
-    @Test
+   @Test
     public function test_UNINITIAL_STATE_IsExpectedValue():Void {
         var expected:String = "uninitializedState";
 
@@ -95,11 +95,13 @@ class SubStateMachineTest
 
     @Test
     public function testAddStateShouldTakeIStateArgument():Void {
-    var knownState:IState = mock(IState);
-    knownState.name.returns("foo");
+        var knownState:IState = mock(IState);
+        knownState.name.returns("foo");
 
-    _instance.addState(knownState);
-}
+        _instance.addState(knownState);
+
+        //
+    }
 
     @Test
     public function testAddStateShouldBeCallableMultipleTimes():Void {
@@ -252,7 +254,7 @@ class SubStateMachineTest
     public function testCanTransitionShouldTrueWhenParentStateIncludesDestinationState():Void {
         setupQuakeStateExample();
 
-        var result:Bool=_instance.canTransition("smash");
+        var result:Bool=_instance.canTransition("attack");
 
         Assert.isTrue(result);
     }
@@ -345,10 +347,17 @@ class SubStateMachineTest
     @Test
     public function testDoTransitionShouldBeAbleToNavigateToAChildState():Void {
         setupQuakeStateExample();
-
         Assert.areEqual("idle", _instance.currentState); // "not expected initial state"
+
+        _instance.doTransition("smash");
+        Assert.areEqual("idle", _instance.currentState); // "not expected state after smash"
+
+        _instance.doTransition("attack");
+        Assert.areEqual("attack", _instance.currentState); // "not expected state after smash"
+
         _instance.doTransition("smash");
         Assert.areEqual("smash", _instance.currentState); // "not expected state after smash"
+
         _instance.doTransition("idle");
         Assert.areEqual("idle", _instance.currentState); // "not expected state after return to idle"
     }
@@ -366,14 +375,14 @@ class SubStateMachineTest
         _instance.addState(new StateBuilder().build("punch", { parent: "melee attack", enter: mock(IEnter) }));
         _instance.addState(new StateBuilder().build("missle attack", { parent: "attack", enter: mock(IEnter) }));
         _instance.addState(new StateBuilder().build("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
-        _instance.initialState="idle";
+        _instance.initialState="attack";
+        mockOnAttack.enter("attack", null, "attack").verify();
 
-        Assert.areEqual("idle", _instance.currentState); // "not expected initial state"
+        Assert.areEqual("attack", _instance.currentState); // "not expected initial state"
         _instance.doTransition("smash");
 
-        mockOnAttack.enter("smash", "idle", "attack").verify();
-        mockOnMeleeAttack.enter("smash", "idle", "melee attack").verify();
-        mockOnSmash.enter("smash", "idle", "smash").verify();
+        mockOnMeleeAttack.enter("smash", "attack", "melee attack").verify();
+        mockOnSmash.enter("smash", "attack", "smash").verify();
 
         _instance.doTransition("idle");
         Assert.areEqual("idle", _instance.currentState); // "not expected state after return to idle",
@@ -390,7 +399,7 @@ class SubStateMachineTest
         _instance.addState(new StateBuilder().build("punch", { parent: "melee attack", enter: mock(IEnter) }));
         _instance.addState(new StateBuilder().build("missle attack", { parent: "attack", enter: mock(IEnter) }));
         _instance.addState(new StateBuilder().build("die", { enter: mock(IEnter), from: "attack", exit: mock(IExit) }));
-        _instance.initialState="idle";
+        _instance.initialState="attack";
 
         _instance.doTransition("smash");
         mockOnExitMeleeAttack.exit(cast any, cast any, cast any)

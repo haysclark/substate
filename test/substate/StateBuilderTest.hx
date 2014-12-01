@@ -105,7 +105,6 @@ class StateBuilderTest {
 
         var result = _instance.build("name");
 
-        Assert.isNotNull(result.parentName);
         Assert.areEqual(expected, result.parentName);
     }
 

@@ -55,7 +55,7 @@ class SubStateMachine implements ISubStateMachine {
 
     // Expected IState Constants
     public static inline var WILDCARD:String = "*";
-    public static inline var NO_PARENT:String = "";
+    public static inline var NO_PARENT:String = null;
 
     //----------------------------------
 	//  vars
@@ -138,7 +138,7 @@ class SubStateMachine implements ISubStateMachine {
 	 * @param stateName	The name of the State
 	 **/
     public function hasState(stateName:String):Bool {
-        return _nameToStates.exists(stateName);
+        return stateName != null && _nameToStates.exists(stateName);
     }
 
     /**
@@ -248,12 +248,18 @@ class SubStateMachine implements ISubStateMachine {
 	//  PRIVATE METHODS
 	//
 	//--------------------------------------------------------------------------
-	private function executeEnterForStack(stateTo:String, oldState:String):Void {
-		var parentStates:Array<IState> = getAllStatesChildToRootByName(stateTo);
-        parentStates.reverse;
-        for(i in 0...parentStates.length) {
-            var state:IState = parentStates[i];
-            state.enter(stateTo, oldState, state.name);
+	private function executeEnterForStack(stateTo:String, stateFrom:String):Void {
+		var toStateTree:Array<IState> = getAllStatesChildToRootByName(stateTo);
+        toStateTree.reverse();
+        var fromStateTree:Array<IState> = getAllStatesChildToRootByName(stateFrom);
+        for(i in 0...toStateTree.length) {
+            var state:IState = toStateTree[i];
+            // is this state in the last states tree
+            if(fromStateTree.indexOf(state) >= 0) {
+                // skip it as this state has already been entered
+                continue;
+            }
+            state.enter(stateTo, stateFrom, state.name);
         }
 	}
 
@@ -365,12 +371,17 @@ class SubStateMachine implements ISubStateMachine {
 	private function getAllFromsForStateByName(toState:String):Array<String> {
 		var froms:Array<String> = new Array<String>();
 		var states:Array<IState> = getAllStatesChildToRootByName(toState);
+        var stop:Bool = false;
         for (state in states) {
-			for (fromName in state.froms){
-				if (froms.indexOf(fromName) < 0) {
+            for (fromName in state.froms){
+                if (froms.indexOf(fromName) < 0) {
 					froms.push(fromName);
+                    stop = true;
 				}
 			}
+            if(stop) {
+                break;
+            }
 		}
 		return froms;
 	}
