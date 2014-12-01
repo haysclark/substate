@@ -11,3 +11,23 @@ A Haxe Hierarchical State Machine
   ~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
+    
+License
+------------
+
+Substate is free, open-source software under the [MIT license](LICENSE.md).
+
+Development Builds
+------------
+
+Clone the Substate repository:
+
+    git clone https://github.com/infinitedescent/substate
+
+Tell haxelib where your development copy of Substate is installed:
+
+    haxelib dev substate substate/src
+
+To return to release builds:
+
+    haxelib dev substate
