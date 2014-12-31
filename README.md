@@ -29,3 +29,6 @@ Tell haxelib where your development copy of Substate is installed:
 To return to release builds:
 
     haxelib dev substate
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/infinitedescent/substate/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
